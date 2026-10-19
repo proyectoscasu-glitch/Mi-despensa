@@ -328,7 +328,7 @@ async function enterPantry(preferredPantryId = null) {
       // Crear despensa si no existe
       const { data: pantry, error: createError } = await supabase
         .from("pantries")
-        .insert({ name: "Mi Despensa (Hogar)", owner_id: currentUser.id })
+        .insert({ name: currentUser.user_metadata?.pantry_name || "Mi Despensa (Hogar)", owner_id: currentUser.id })
         .select()
         .single();
       if (createError) throw createError;
