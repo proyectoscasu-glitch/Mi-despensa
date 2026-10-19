@@ -305,6 +305,11 @@ async function handleCustomSignup(e) {
   const { data, error } = await supabase.auth.signUp({ email, password, name, pantry_name: pantryName });
   if (error) {
     msg("authMessage", error.message, true);
+  } else if (!data?.session && !data?.user?.email_confirmed_at) {
+    // Supabase exige confirmar el correo antes del primer inicio de sesión
+    if ($("email")) $("email").value = email;
+    msg("authMessage", `Te enviamos un correo a ${email}. Ábrelo y confirma tu cuenta para poder entrar.`);
+    showToast("Confirma tu correo para entrar", "mark_email_unread");
   } else {
     showToast(`¡Cuenta creada! Código familiar: ${data?.user?.user_metadata?.invite_code || 'CASA88'}`, "celebration");
   }
