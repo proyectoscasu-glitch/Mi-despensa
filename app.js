@@ -5,6 +5,9 @@ import { createLocalClient, initDemoData } from "./local-db.js";
 const cfg = window.MI_DESPENSA_CONFIG || {};
 const isConfigured = cfg.SUPABASE_URL?.startsWith("https://") && cfg.SUPABASE_ANON_KEY && !cfg.SUPABASE_ANON_KEY.includes("PEGA_AQUI");
 
+// Recuerda en este dispositivo cuál es la despensa activa (útil al pertenecer a varias)
+const ACTIVE_PANTRY_KEY = "mi_despensa_active_pantry";
+
 const $ = (id) => document.getElementById(id);
 const show = (id, yes = true) => $(id)?.classList.toggle("hidden", !yes);
 const msg = (id, text = "", isError = false) => {
@@ -175,6 +178,7 @@ function bindEvents() {
   // Invitaciones y Pareja
   $("copyInviteBtn")?.addEventListener("click", copyInviteCode);
   $("acceptInviteForm")?.addEventListener("submit", acceptInvite);
+  $("joinPantryForm")?.addEventListener("submit", joinPantrySubmit);
   $("importBtn")?.addEventListener("click", importCsv);
 }
 
@@ -325,7 +329,7 @@ function togglePasswordVisibility() {
   icon.textContent = isPass ? "visibility_off" : "visibility";
 }
 
-async function enterPantry() {
+async function enterPantry(preferredPantryId = null) {
   show("authView", false);
   show("appView", true);
 
@@ -354,9 +358,16 @@ async function enterPantry() {
       currentPantry = pantry;
       currentMemberRole = "owner";
     } else {
-      currentPantry = members[0].pantries;
-      currentMemberRole = members[0].role;
+      // Preferimos la despensa indicada o la última usada en este dispositivo,
+      // para no caer en una despensa vacía propia si te uniste a la de tu pareja.
+      let saved = preferredPantryId;
+      if (!saved) { try { saved = localStorage.getItem(ACTIVE_PANTRY_KEY); } catch {} }
+      const chosen = members.find(m => m.pantry_id === saved) || members[0];
+      currentPantry = chosen.pantries;
+      currentMemberRole = chosen.role;
     }
+
+    try { localStorage.setItem(ACTIVE_PANTRY_KEY, currentPantry.id); } catch {}
 
     $("pantryName").textContent = currentPantry.name || "Mi Despensa";
     const partnerName = currentUser.user_metadata?.partner_name || "Sofía";
@@ -1332,7 +1343,25 @@ async function acceptInvite(e) {
 
   showToast("¡Te has unido a la despensa compartida!", "celebration");
   $("acceptInviteCode").value = "";
-  await enterPantry();
+  await enterPantry(pantryId);
+}
+
+async function joinPantrySubmit(e) {
+  e.preventDefault();
+  const code = $("joinPantryCode")?.value.trim().toUpperCase();
+  if (!code) return;
+
+  msg("joinPantryMessage", "Uniéndote a la despensa…");
+  const { data: pantryId, error } = await supabase.rpc("accept_pantry_invite", { p_code: code });
+  if (error) {
+    return msg("joinPantryMessage", friendlyError(error), true);
+  }
+
+  msg("joinPantryMessage", "¡Listo! Ya comparten la misma despensa.");
+  $("joinPantryCode").value = "";
+  showToast("¡Te has unido a la despensa compartida!", "celebration");
+  await enterPantry(pantryId);
+  switchMainTab("tabInventory");
 }
 
 async function importCsv() {

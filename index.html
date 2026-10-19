@@ -469,6 +469,25 @@
           <p id="inviteMessage" class="text-xs text-primary font-medium" aria-live="polite"></p>
         </div>
 
+        <!-- Tarjeta: Unirse a una despensa con código -->
+        <div class="bg-surface-container-lowest rounded-2xl p-5 shadow-xs border border-surface-container-high flex flex-col gap-3">
+          <div class="flex items-center gap-2.5 text-primary font-bold text-sm">
+            <span class="material-symbols-outlined text-xl">group_add</span>
+            <span>Unirse a otra despensa</span>
+          </div>
+          <p class="text-xs text-on-surface-variant leading-relaxed">
+            ¿Tu pareja ya creó la despensa? Escribe aquí el código que te compartió para usar el mismo inventario.
+          </p>
+          <form id="joinPantryForm" class="flex items-center gap-2">
+            <input id="joinPantryCode" type="text" maxlength="10" placeholder="CÓDIGO DE INVITACIÓN" 
+              class="flex-1 uppercase tracking-wider h-11 px-3.5 rounded-xl bg-surface-container-low text-on-surface text-sm font-bold border border-outline-variant/60">
+            <button type="submit" class="h-11 px-4 rounded-xl bg-primary text-on-primary font-bold text-xs active:scale-95 transition-transform">
+              Unirse
+            </button>
+          </form>
+          <p id="joinPantryMessage" class="text-xs text-primary font-medium" aria-live="polite"></p>
+        </div>
+
         <!-- Tarjeta: Importar desde Excel / CSV -->
         <div class="bg-surface-container-lowest rounded-2xl p-5 shadow-xs border border-surface-container-high flex flex-col gap-3">
           <div class="flex items-center gap-2.5 text-primary font-bold text-sm">

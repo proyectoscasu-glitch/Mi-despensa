@@ -240,11 +240,28 @@ $$;
 create or replace function public.create_pantry_invite(p_pantry_id uuid)
 returns text language plpgsql security definer set search_path=public
 as $$
-declare v_code text; v_hash text;
+declare
+  v_code text;
+  v_hash text;
+  v_alphabet text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  v_attempts int := 0;
 begin
   if not public.is_pantry_owner(p_pantry_id) then raise exception 'Solo el propietario puede invitar.'; end if;
-  v_code:=encode(gen_random_bytes(18),'hex');
-  v_hash:=encode(digest(v_code,'sha256'),'hex');
+
+  -- Un solo código vigente por despensa: borramos los no usados anteriores
+  delete from public.pantry_invites where pantry_id = p_pantry_id and accepted_at is null;
+
+  loop
+    v_attempts := v_attempts + 1;
+    v_code := '';
+    for i in 1..8 loop
+      v_code := v_code || substr(v_alphabet, 1 + floor(random()*length(v_alphabet))::int, 1);
+    end loop;
+    v_hash := encode(digest(v_code,'sha256'),'hex');
+    exit when not exists (select 1 from public.pantry_invites where code_hash = v_hash);
+    if v_attempts > 20 then raise exception 'No se pudo generar el código, intenta de nuevo.'; end if;
+  end loop;
+
   insert into public.pantry_invites(pantry_id,code_hash,created_by) values(p_pantry_id,v_hash,auth.uid());
   return v_code;
 end;

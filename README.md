@@ -56,25 +56,41 @@ py generar_iconos.py
 
 ---
 
-## ☁️ Publicación en GitHub, Render y Supabase
+## ☁️ Modo compartido (nube) — para pareja o familia
 
-Cuando estés listo para llevar la aplicación a la web y usarla desde teléfonos móviles:
+La app ya está publicada y conectada a Supabase:
 
-1. **GitHub:**
-   ```bash
-   git init
-   git add .
-   git commit -m "feat: rediseño Smart Home Pantry Manager con Serene Hearth y modo local"
-   git remote add origin https://github.com/TU_USUARIO/mi-despensa.git
-   git push -u origin main
-   ```
-2. **Render:**
-   - En [Render.com](https://render.com), crea un nuevo servicio **Static Site**.
-   - Conéctalo a tu repositorio de GitHub.
-   - En *Publish directory*, déjalo en `./` o raíz.
-   - Obtendrás una URL con HTTPS público (ej. `https://mi-despensa.onrender.com`).
-3. **Supabase (Para sincronización multiusuario en la nube):**
-   - Crea un proyecto en [Supabase](https://supabase.com).
-   - En el **SQL Editor**, ejecuta el script `supabase.sql`.
-   - Copia la `URL del proyecto` y la `clave anónima pública` en `config.js`.
-   - La aplicación detectará automáticamente las claves y pasará del modo local al modo en la nube sincronizado en tiempo real.
+- **App:** https://proyectoscasu-glitch.github.io/Mi-despensa/
+- **Migrar datos locales → nube:** https://proyectoscasu-glitch.github.io/Mi-despensa/migrar.html
+- El proyecto de Supabase ya tiene las tablas, la seguridad (RLS) y las funciones necesarias.
+
+### Poner en marcha (una sola vez)
+
+1. Abre la app y pulsa **Registrarse**. Si Supabase pide confirmar el correo, revisa tu bandeja y haz clic en el enlace.
+2. Inicia sesión: la app crea automáticamente tu despensa en la nube.
+3. *(Opcional)* Si tenías datos en Modo Local **en ese mismo teléfono o navegador**, abre `migrar.html` en el mismo dispositivo, inicia sesión y pulsa **Migrar a la nube**. No se borra nada local; además puedes descargar una copia de seguridad en JSON.
+
+### Invitar a tu pareja
+
+1. En la app (cuenta dueña) ve a la pestaña **Pareja** y copia el **Código de invitación** (8 caracteres, ej. `CASA88`).
+2. En el teléfono de tu pareja: crea su cuenta e inicia sesión.
+3. En su app, pestaña **Pareja → Unirse a otra despensa**, escribe el código.
+4. Desde ahí ambos ven y editan el **mismo inventario**, sincronizado en tiempo real.
+
+> El código es único por despensa y dura 7 días. Puedes generar uno nuevo desde la misma pantalla.
+
+### Archivos de la nube
+
+- `config.js`: URL y clave pública (`anon`) del proyecto Supabase.
+- `supabase.sql`: esquema completo (tablas, RLS, funciones). Úsalo si algún día creas otro proyecto.
+- `migrar.html`: copia los datos del Modo Local de un dispositivo a la nube.
+
+### Publicar cambios
+
+```bash
+git add -A
+git commit -m "descripción del cambio"
+git push
+```
+
+GitHub Pages se actualiza solo en ~1 minuto. Si cambias archivos que quedan en caché (`config.js`, `styles.css`, `index.html`), sube el número de versión en `sw.js` (`mi-despensa-shell-vN`) para que los teléfonos tomen la versión nueva.
