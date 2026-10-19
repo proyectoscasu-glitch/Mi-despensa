@@ -25,9 +25,12 @@ create table if not exists public.pantry_members (
   pantry_id uuid not null references public.pantries(id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete cascade,
   role text not null default 'member' check (role in ('owner','member')),
+  display_name text,
   joined_at timestamptz not null default now(),
   primary key (pantry_id,user_id)
 );
+
+alter table public.pantry_members add column if not exists display_name text;
 
 create table if not exists public.products (
   id uuid primary key default gen_random_uuid(),
@@ -123,6 +126,31 @@ as $$
   select exists(select 1 from public.pantry_members pm where pm.pantry_id=p_pantry_id and pm.user_id=auth.uid() and pm.role='owner');
 $$;
 
+-- Nombre visible del usuario que está conectado (para mostrar "Compartida con ...")
+create or replace function public.current_display_name()
+returns text language sql stable security definer set search_path=public
+as $$
+  select coalesce(
+    nullif(trim(u.raw_user_meta_data->>'name'),''),
+    nullif(trim(u.raw_user_meta_data->>'full_name'),''),
+    split_part(u.email,'@',1)
+  )
+  from auth.users u
+  where u.id = auth.uid();
+$$;
+
+-- Guarda/actualiza mi nombre en la despensa
+create or replace function public.sync_my_membership(p_pantry_id uuid)
+returns void language plpgsql security definer set search_path=public
+as $$
+begin
+  if auth.uid() is null then raise exception 'Debes iniciar sesión.'; end if;
+  update public.pantry_members
+     set display_name = public.current_display_name()
+   where pantry_id = p_pantry_id and user_id = auth.uid();
+end;
+$$;
+
 -- ==========================================
 -- ROW LEVEL SECURITY
 -- ==========================================
@@ -214,8 +242,8 @@ begin
   if v_new_quantity < 0 then raise exception 'No hay suficiente stock para descontar esa cantidad.'; end if;
 
   update public.products set quantity=v_new_quantity,updated_at=now() where id=p_product_id;
-  insert into public.stock_movements(pantry_id,product_id,user_id,movement_type,quantity,delta,note)
-  values(v_product.pantry_id,p_product_id,auth.uid(),p_movement_type,p_quantity,v_delta,p_note);
+  insert into public.stock_movements(pantry_id,product_id,user_id,user_name,movement_type,quantity,delta,note)
+  values(v_product.pantry_id,p_product_id,auth.uid(),public.current_display_name(),p_movement_type,p_quantity,v_delta,p_note);
   return v_new_quantity;
 end;
 $$;
@@ -278,8 +306,9 @@ begin
     and accepted_at is null and expires_at>now()
   for update;
   if not found then raise exception 'Invitación inválida, vencida o ya utilizada.'; end if;
-  insert into public.pantry_members(pantry_id,user_id,role) values(v_invite.pantry_id,auth.uid(),'member')
-  on conflict(pantry_id,user_id) do nothing;
+  insert into public.pantry_members(pantry_id,user_id,role,display_name)
+  values(v_invite.pantry_id,auth.uid(),'member',public.current_display_name())
+  on conflict(pantry_id,user_id) do update set display_name = public.current_display_name();
   update public.pantry_invites set accepted_by=auth.uid(),accepted_at=now() where id=v_invite.id;
   return v_invite.pantry_id;
 end;
@@ -288,6 +317,8 @@ $$;
 -- Solo usuarios con sesión pueden ejecutar las funciones (nada de acceso anónimo)
 revoke all on function public.is_pantry_member(uuid) from public;
 revoke all on function public.is_pantry_owner(uuid) from public;
+revoke all on function public.current_display_name() from public;
+revoke all on function public.sync_my_membership(uuid) from public;
 revoke all on function public.apply_stock_movement(uuid,text,numeric,text) from public;
 revoke all on function public.toggle_shopping_cart(uuid) from public;
 revoke all on function public.create_pantry_invite(uuid) from public;
@@ -295,6 +326,8 @@ revoke all on function public.accept_pantry_invite(text) from public;
 
 revoke execute on function public.is_pantry_member(uuid) from anon;
 revoke execute on function public.is_pantry_owner(uuid) from anon;
+revoke execute on function public.current_display_name() from anon;
+revoke execute on function public.sync_my_membership(uuid) from anon;
 revoke execute on function public.apply_stock_movement(uuid,text,numeric,text) from anon;
 revoke execute on function public.toggle_shopping_cart(uuid) from anon;
 revoke execute on function public.create_pantry_invite(uuid) from anon;
@@ -302,6 +335,8 @@ revoke execute on function public.accept_pantry_invite(text) from anon;
 
 grant execute on function public.is_pantry_member(uuid) to authenticated;
 grant execute on function public.is_pantry_owner(uuid) to authenticated;
+grant execute on function public.current_display_name() to authenticated;
+grant execute on function public.sync_my_membership(uuid) to authenticated;
 grant execute on function public.apply_stock_movement(uuid,text,numeric,text) to authenticated;
 grant execute on function public.toggle_shopping_cart(uuid) to authenticated;
 grant execute on function public.create_pantry_invite(uuid) to authenticated;

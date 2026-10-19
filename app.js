@@ -42,6 +42,13 @@ if (isConfigured) {
 }
 
 async function initApp() {
+  // En modo nube ocultamos las opciones que solo existen en el modo local
+  if (isConfigured) {
+    $("localOnlyDivider")?.classList.add("hidden");
+    $("quickLocalBtn")?.classList.add("hidden");
+    $("localInviteBox")?.classList.add("hidden");
+  }
+
   bindEvents();
 
   // Escuchar estado de sesión
@@ -84,12 +91,6 @@ function bindEvents() {
   $("closeForgotModalBtn")?.addEventListener("click", () => show("forgotPasswordModal", false));
   $("lookupPasswordBtn")?.addEventListener("click", handleLookupPassword);
   $("updatePasswordBtn")?.addEventListener("click", handleUpdatePassword);
-
-  // Google Login Modal
-  $("googleLoginBtn")?.addEventListener("click", openGoogleModal);
-  $("closeGoogleModalBtn")?.addEventListener("click", () => show("googleLoginModal", false));
-  $("googleSuggestedAccountBtn")?.addEventListener("click", () => handleGoogleLogin("cristian@gmail.com", "Cristian"));
-  $("googleCustomLoginBtn")?.addEventListener("click", () => handleCustomGoogleLogin());
 
   // Navegación Bottom Bar
   document.querySelectorAll(".nav-tab-btn").forEach(btn => {
@@ -219,33 +220,6 @@ async function handleQuickDemoLogin() {
   }
 }
 
-function openGoogleModal() {
-  const currentEmail = $("email")?.value.trim();
-  if (currentEmail && currentEmail.includes("@")) {
-    const suggested = $("googleSuggestedEmail");
-    if (suggested) suggested.textContent = currentEmail;
-  }
-  show("googleLoginModal", true);
-}
-
-async function handleGoogleLogin(email, name) {
-  show("googleLoginModal", false);
-  msg("authMessage", "Iniciando sesión con Google…");
-  if (supabase.isLocal) {
-    await supabase.auth.signInWithGoogle({ email, name });
-    showToast(`Sesión iniciada con Google (${name})`, "account_circle");
-  } else {
-    await supabase.auth.signInWithOAuth({ provider: "google" });
-  }
-}
-
-async function handleCustomGoogleLogin() {
-  const email = $("customGoogleEmail")?.value.trim();
-  if (!email) return alert("Por favor ingresa un correo de Google");
-  const name = email.split("@")[0] || "Usuario";
-  await handleGoogleLogin(email, name);
-}
-
 function openForgotPasswordModal() {
   const currentEmail = $("email")?.value.trim();
   if (currentEmail) {
@@ -302,7 +276,11 @@ async function handleCustomSignup(e) {
   
   show("signupModal", false);
   msg("authMessage", "Creando cuenta y despensa local…");
-  const { data, error } = await supabase.auth.signUp({ email, password, name, pantry_name: pantryName });
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: { name: name || email.split("@")[0], pantry_name: pantryName } }
+  });
   if (error) {
     msg("authMessage", error.message, true);
   } else if (!data?.session && !data?.user?.email_confirmed_at) {
@@ -375,9 +353,12 @@ async function enterPantry(preferredPantryId = null) {
     try { localStorage.setItem(ACTIVE_PANTRY_KEY, currentPantry.id); } catch {}
 
     $("pantryName").textContent = currentPantry.name || "Mi Despensa";
-    const partnerName = currentUser.user_metadata?.partner_name || "Sofía";
-    $("partnerNameDisplay").textContent = partnerName;
-    $("memberStatus").textContent = supabase.isLocal ? "Modo Local • Conectado" : "En línea • Sincronizado";
+
+    // Guarda mi nombre en la despensa y muestra las personas reales que la comparten
+    if (!supabase.isLocal) {
+      try { await supabase.rpc("sync_my_membership", { p_pantry_id: currentPantry.id }); } catch {}
+    }
+    await loadMembers();
 
     await loadProducts();
     subscribeRealtime();
@@ -385,6 +366,93 @@ async function enterPantry(preferredPantryId = null) {
   } catch (err) {
     showToast(friendlyError(err), "error");
   }
+}
+
+// ==========================================
+// PERSONAS DE LA DESPENSA Y AUDITORÍA
+// ==========================================
+function myDisplayName() {
+  const md = currentUser?.user_metadata || {};
+  return md.name || md.full_name || (currentUser?.email || "").split("@")[0] || "Usuario";
+}
+
+function formatNames(names) {
+  if (names.length === 1) return names[0];
+  if (names.length === 2) return `${names[0]} y ${names[1]}`;
+  return names.slice(0, -1).join(", ") + " y " + names[names.length - 1];
+}
+
+async function loadMembers() {
+  const namesEl = $("partnerNameDisplay");
+  const statusEl = $("memberStatus");
+  const modeEl = $("syncModeText");
+
+  if (supabase.isLocal) {
+    if (namesEl) namesEl.textContent = "Sin conexión a la nube";
+    if (statusEl) statusEl.textContent = "Modo local • Sin sincronizar";
+    if (modeEl) modeEl.textContent = "solo en este dispositivo";
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("pantry_members")
+    .select("user_id,role,display_name")
+    .eq("pantry_id", currentPantry.id);
+
+  if (error) return;
+
+  const members = data || [];
+  const others = members
+    .filter(m => m.user_id !== currentUser.id)
+    .map(m => (m.display_name || "").trim())
+    .filter(Boolean);
+
+  if (namesEl) {
+    namesEl.textContent = others.length
+      ? `Compartida con ${formatNames(others)}`
+      : "Solo tú por ahora";
+  }
+  if (statusEl) {
+    statusEl.textContent = members.length > 1
+      ? `${members.length} personas • Sincronizado`
+      : "Sincronizado";
+  }
+  if (modeEl) modeEl.textContent = "sincronizado en la nube";
+}
+
+function timeAgo(iso) {
+  const min = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (min < 1) return "hace instantes";
+  if (min < 60) return `hace ${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `hace ${h} h`;
+  const d = Math.floor(h / 24);
+  return d === 1 ? "hace 1 día" : `hace ${d} días`;
+}
+
+async function loadAuditFooter() {
+  const el = $("auditFooterText");
+  if (!el || !currentPantry) return;
+
+  if (supabase.isLocal) {
+    el.textContent = "Modo local: historial solo en este dispositivo";
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("stock_movements")
+    .select("user_name,created_at")
+    .eq("pantry_id", currentPantry.id)
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  if (error || !data?.length) {
+    el.textContent = "Sin movimientos registrados todavía";
+    return;
+  }
+
+  const m = data[0];
+  el.textContent = `Último ajuste por ${m.user_name || "alguien"} · ${timeAgo(m.created_at)}`;
 }
 
 // ==========================================
@@ -408,6 +476,7 @@ async function loadProducts() {
   renderProducts();
   renderAlerts();
   updateCeroDesperdicio();
+  loadAuditFooter();
 }
 
 function updateMetrics() {
@@ -1126,7 +1195,7 @@ async function saveProduct(e) {
       pantry_id: currentPantry.id,
       product_id: prod.id,
       user_id: currentUser.id,
-      user_name: "Tú",
+      user_name: myDisplayName(),
       movement_type: "in",
       quantity: payload.quantity,
       delta: payload.quantity,
