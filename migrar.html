@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Migrar datos locales a la nube · Mi Despensa</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin: 0; padding: 24px 16px 60px;
+    background: #f4f7f4; color: #1b1f1b; line-height: 1.5;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; color: #166534; }
+  .sub { color: #4b5563; font-size: .92rem; margin: 0 0 20px; }
+  .card {
+    background: #fff; border: 1px solid #e2e8e2; border-radius: 14px;
+    padding: 16px; margin-bottom: 16px;
+  }
+  h2 { font-size: 1rem; margin: 0 0 10px; }
+  label { display: block; font-size: .85rem; font-weight: 600; margin: 10px 0 4px; }
+  input[type=email], input[type=password], input[type=text] {
+    width: 100%; padding: 11px 12px; border: 1px solid #cbd5cb; border-radius: 10px;
+    font-size: 1rem; background: #fbfdfb;
+  }
+  .check { display: flex; gap: 10px; align-items: flex-start; margin-top: 12px; font-size: .88rem; }
+  .check input { margin-top: 3px; }
+  button {
+    width: 100%; padding: 13px; border: 0; border-radius: 12px; font-size: 1rem;
+    font-weight: 700; cursor: pointer; margin-top: 14px;
+  }
+  .primary { background: #16a34a; color: #fff; }
+  .primary:disabled { background: #9ca3af; cursor: not-allowed; }
+  .ghost { background: #eef2ee; color: #166534; margin-top: 8px; }
+  pre#log {
+    background: #0f172a; color: #d1fae5; padding: 14px; border-radius: 12px;
+    font-size: .8rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word;
+    max-height: 340px; overflow: auto; margin: 0;
+  }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
+  .stat { background: #f0fdf4; border: 1px solid #dcfce7; border-radius: 10px; padding: 10px; }
+  .stat b { display: block; font-size: 1.25rem; color: #166534; }
+  .stat span { font-size: .75rem; color: #4b5563; }
+  .warn { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; padding: 12px; border-radius: 10px; font-size: .86rem; }
+  .ok { color: #16a34a; font-weight: 700; }
+  a { color: #166534; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Migrar datos locales a la nube 🌿</h1>
+  <p class="sub">Esta página copia los datos guardados en <b>este dispositivo</b> (modo local) a tu despensa en la nube, para que tú y tu pareja la compartan. No borra nada de este dispositivo.</p>
+
+  <div class="card">
+    <h2>1. Datos encontrados en este dispositivo</h2>
+    <div id="resumen" class="stats"><div class="stat"><b>…</b><span>Cargando</span></div></div>
+  </div>
+
+  <div class="card">
+    <h2>2. Inicia sesión con tu cuenta de la nube</h2>
+    <p class="sub" style="margin-bottom:6px">Usa el mismo correo y contraseña con que entras a la app en modo nube. Si aún no tienes cuenta, créala primero en la app (<b>Registrarse</b>) y vuelve aquí.</p>
+    <form id="form">
+      <label for="email">Correo</label>
+      <input id="email" type="email" autocomplete="username" placeholder="tucorreo@ejemplo.com" required>
+      <label for="password">Contraseña</label>
+      <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" required>
+
+      <div class="check">
+        <input id="skipDemo" type="checkbox" checked>
+        <label for="skipDemo" style="margin:0;font-weight:500">Omitir productos de ejemplo (los que se llaman “prod-…”). Desmarca si quieres copiarlos también.</label>
+      </div>
+      <div class="check">
+        <input id="includeMovs" type="checkbox" checked>
+        <label for="includeMovs" style="margin:0;font-weight:500">Incluir el historial de movimientos de stock.</label>
+      </div>
+
+      <button id="go" type="submit" class="primary">Migrar a la nube</button>
+      <button id="backup" type="button" class="ghost">Descargar copia de seguridad (JSON)</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>3. Progreso</h2>
+    <pre id="log">Listo para empezar.</pre>
+  </div>
+</div>
+
+<script src="./config.js"></script>
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const KEYS = {
+  products: "mi_despensa_products",
+  barcodes: "mi_despensa_barcodes",
+  movements: "mi_despensa_movements",
+  pantries: "mi_despensa_pantries",
+  members: "mi_despensa_members",
+  users: "mi_despensa_users",
+  session: "mi_despensa_session"
+};
+
+const $ = (id) => document.getElementById(id);
+const logEl = $("log");
+function log(text) {
+  logEl.textContent += "\n" + text;
+  logEl.scrollTop = logEl.scrollHeight;
+}
+function clearLog() { logEl.textContent = "Iniciando…"; }
+
+function read(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+const local = {
+  products: read(KEYS.products) || [],
+  barcodes: read(KEYS.barcodes) || [],
+  movements: read(KEYS.movements) || [],
+  pantries: read(KEYS.pantries) || [],
+  users: read(KEYS.users) || []
+};
+
+// --- Resumen ---
+$("resumen").innerHTML = [
+  [local.products.length, "productos"],
+  [local.barcodes.length, "códigos de barras"],
+  [local.movements.length, "movimientos"],
+  [local.pantries.length, "despensas locales"]
+].map(([n, label]) => `<div class="stat"><b>${n}</b><span>${label}</span></div>`).join("");
+
+if (!local.products.length && !local.movements.length) {
+  document.querySelector("#resumen").insertAdjacentHTML("afterend",
+    `<p class="warn" style="margin-top:12px">No se encontraron datos locales <b>en este navegador/dispositivo</b>. Si agregaste productos en otro teléfono o navegador, abre esta misma página ahí. También puedes seguir y crear una despensa nueva.</p>`);
+}
+
+// --- Copia de seguridad ---
+$("backup").addEventListener("click", () => {
+  const dump = {};
+  for (const [name, key] of Object.entries(KEYS)) dump[name] = read(key);
+  const blob = new Blob([JSON.stringify(dump, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "mi-despensa-local-backup.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+// --- Migración ---
+const isDemoId = (id) => /^prod-\d+$/.test(String(id || ""));
+
+$("form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const btn = $("go");
+  btn.disabled = true;
+  clearLog();
+
+  try {
+    const cfg = window.MI_DESPENSA_CONFIG || {};
+    const configured = cfg.SUPABASE_URL?.startsWith("https://") &&
+      cfg.SUPABASE_ANON_KEY && !cfg.SUPABASE_ANON_KEY.includes("PEGA_AQUI");
+    if (!configured) {
+      log("❌ config.js todavía no tiene las claves de Supabase.");
+      log("   Sube la versión nueva a GitHub Pages y vuelve a entrar (recarga forzada).");
+      return;
+    }
+
+    const email = $("email").value.trim();
+    const password = $("password").value;
+    const skipDemo = $("skipDemo").checked;
+    const includeMovs = $("includeMovs").checked;
+
+    const client = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
+
+    log("🔐 Iniciando sesión…");
+    const { data: auth, error: authError } = await client.auth.signInWithPassword({ email, password });
+    if (authError) { log("❌ " + authError.message); return; }
+    const userId = auth.user.id;
+    log("✅ Sesión iniciada como " + (auth.user.email || userId));
+
+    // Despensa destino
+    log("\n🏠 Buscando tu despensa en la nube…");
+    const { data: members, error: memError } = await client
+      .from("pantry_members")
+      .select("pantry_id, role, pantries(id, name)")
+      .eq("user_id", userId);
+    if (memError) { log("❌ " + memError.message); return; }
+
+    let pantryId = null;
+    let pantryName = "";
+    if (members?.length) {
+      pantryId = members[0].pantry_id;
+      pantryName = members[0].pantries?.name || "Mi Despensa";
+      log("✅ Usando la despensa existente: " + pantryName);
+    } else {
+      pantryName = local.pantries[0]?.name || "Mi Despensa (Hogar)";
+      const { data: pantry, error: pErr } = await client
+        .from("pantries")
+        .insert({ name: pantryName, owner_id: userId })
+        .select()
+        .single();
+      if (pErr) { log("❌ No se pudo crear la despensa: " + pErr.message); return; }
+      pantryId = pantry.id;
+      const { error: mErr } = await client
+        .from("pantry_members")
+        .insert({ pantry_id: pantryId, user_id: userId, role: "owner" });
+      if (mErr) { log("❌ No se pudo unir a la despensa: " + mErr.message); return; }
+      log("✅ Despensa creada: " + pantryName);
+    }
+
+    // Productos existentes (para no duplicar)
+    const { data: existing } = await client.from("products").select("name").eq("pantry_id", pantryId);
+    const usedNames = new Set((existing || []).map((p) => (p.name || "").toLowerCase().trim()));
+
+    const localUserName = local.users[0]?.name || "Tú";
+    const idMap = new Map();
+    let created = 0, skippedDemo = 0, skippedDup = 0, failed = 0;
+
+    log("\n📦 Copiando productos…");
+    for (const p of local.products) {
+      if (skipDemo && isDemoId(p.id)) { skippedDemo++; continue; }
+      const name = (p.name || "").trim();
+      if (!name) { failed++; continue; }
+      if (usedNames.has(name.toLowerCase())) { skippedDup++; continue; }
+
+      const payload = {
+        pantry_id: pantryId,
+        name,
+        brand: p.brand ?? null,
+        format: p.format ?? null,
+        quantity: Number(p.quantity) || 0,
+        unit: p.unit || "unidades",
+        min_quantity: Number(p.min_quantity) || 0,
+        location: p.location ?? null,
+        expiry_date: p.expiry_date || null,
+        expiry_alert: !!p.expiry_alert,
+        expiry_days_before: Number(p.expiry_days_before) || 3,
+        in_shopping_cart: !!p.in_shopping_cart,
+        photo_url: p.photo_url ?? null,
+        batches: Array.isArray(p.batches) ? p.batches : []
+      };
+      const { data: ins, error } = await client.from("products").insert(payload).select("id").single();
+      if (error) {
+        failed++;
+        log("   ⚠️ " + name + ": " + error.message);
+        continue;
+      }
+      idMap.set(p.id, ins.id);
+      usedNames.add(name.toLowerCase());
+      created++;
+    }
+    log(`   ✅ ${created} productos copiados · ${skippedDup} duplicados omitidos · ${skippedDemo} de ejemplo omitidos · ${failed} con error`);
+
+    // Códigos de barras
+    let codes = 0;
+    if (idMap.size) {
+      log("\n🏷️ Copiando códigos de barras…");
+      const rows = [];
+      const seen = new Set();
+      for (const b of local.barcodes) {
+        const newId = idMap.get(b.product_id);
+        if (!newId || !b.barcode) continue;
+        const key = newId + "|" + b.barcode;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        rows.push({ pantry_id: pantryId, product_id: newId, barcode: String(b.barcode) });
+      }
+      if (rows.length) {
+        const { error } = await client.from("product_barcodes").insert(rows);
+        if (error) log("   ⚠️ " + error.message); else codes = rows.length;
+      }
+      log(`   ✅ ${codes} códigos copiados`);
+    }
+
+    // Movimientos
+    let movs = 0, movFailed = 0;
+    if (includeMovs && idMap.size && local.movements.length) {
+      log("\n📜 Copiando historial de movimientos…");
+      for (const m of local.movements) {
+        const newId = idMap.get(m.product_id);
+        if (!newId) continue;
+        const row = {
+          pantry_id: pantryId,
+          product_id: newId,
+          user_id: userId,
+          user_name: m.user_name || localUserName,
+          movement_type: m.movement_type || "adjustment",
+          quantity: Number(m.quantity) || 0,
+          delta: Number(m.delta) || 0,
+          note: m.note ?? null
+        };
+        if (m.created_at) row.created_at = m.created_at;
+        const { error } = await client.from("stock_movements").insert(row);
+        if (error) movFailed++; else movs++;
+      }
+      log(`   ✅ ${movs} movimientos copiados${movFailed ? " · " + movFailed + " con error" : ""}`);
+    }
+
+    log("\n🎉 ¡Listo! Los datos ya están en la nube.");
+    log("   Abre la app (index.html) e inicia sesión con el mismo correo para verlos.");
+    if (!local.products.length) log("   (No había productos locales en este dispositivo.)");
+  } catch (err) {
+    log("❌ Error inesperado: " + (err?.message || err));
+  } finally {
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
