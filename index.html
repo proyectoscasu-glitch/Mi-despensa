@@ -1,0 +1,1031 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#1e4d3e">
+  <meta name="description" content="Mi Despensa — Smart Home Pantry Manager para el hogar colaborativo">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+
+  <!-- Apple / iOS: usar como app a pantalla completa desde Safari -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Despensa">
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+  
+  <!-- Google Fonts: Plus Jakarta Sans & Material Symbols -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN con la paleta de Stitch Serene Hearth -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#013628",
+            "primary-container": "#1e4d3e",
+            "primary-fixed": "#bbedd8",
+            "primary-fixed-dim": "#a0d1bd",
+            "on-primary": "#ffffff",
+            "on-primary-container": "#8dbda9",
+            "on-primary-fixed": "#002117",
+            "surface": "#ecfef3",
+            "surface-dim": "#cdded4",
+            "surface-bright": "#ecfef3",
+            "surface-container": "#e0f2e7",
+            "surface-container-low": "#e6f8ed",
+            "surface-container-high": "#dbece2",
+            "surface-container-highest": "#d5e7dc",
+            "surface-container-lowest": "#ffffff",
+            "on-surface": "#101e18",
+            "on-surface-variant": "#404945",
+            "secondary": "#536258",
+            "secondary-container": "#d7e7d9",
+            "secondary-fixed": "#d7e7d9",
+            "on-secondary-container": "#59685e",
+            "tertiary": "#4d2400",
+            "tertiary-container": "#6e3600",
+            "tertiary-fixed": "#ffdcc5",
+            "on-tertiary-fixed": "#301400",
+            "error": "#ba1a1a",
+            "error-container": "#ffdad6",
+            "on-error-container": "#93000a",
+            "outline": "#717974",
+            "outline-variant": "#c0c8c3"
+          },
+          fontFamily: {
+            sans: ["Plus Jakarta Sans", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="stylesheet" href="./styles.css">
+  <title>Mi Despensa — Smart Home Pantry Manager</title>
+</head>
+<body class="bg-surface text-on-surface font-sans min-h-screen flex flex-col selection:bg-primary-fixed selection:text-on-primary-fixed">
+
+  <!-- ========================================== -->
+  <!-- 1. VISTA DE AUTENTICACIÓN / LOGIN         -->
+  <!-- ========================================== -->
+  <!-- ========================================== -->
+  <!-- 1. VISTA DE AUTENTICACIÓN / LOGIN         -->
+  <!-- ========================================== -->
+  <section id="authView" class="flex-1 flex flex-col justify-center items-center px-4 py-8 max-w-sm sm:max-w-md mx-auto w-full">
+    <!-- Emblem & Brand -->
+    <div class="flex flex-col items-center text-center mb-4">
+      <img src="./pantry_logo.jpg" alt="Mi Despensa" class="w-24 h-24 rounded-3xl shadow-sm object-cover mb-2 border border-[#d2edd9]">
+      <h1 class="text-3xl font-extrabold text-[#06382b] tracking-tight">Mi Despensa</h1>
+      <div class="inline-flex items-center gap-1.5 mt-2 px-3.5 py-1 rounded-full bg-[#ddeee3] text-[#083d2e] font-bold text-xs uppercase tracking-wider">
+        <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">favorite</span>
+        <span>UNA DESPENSA, DOS PERSONAS</span>
+      </div>
+      <p class="text-xs sm:text-sm text-[#486355] max-w-xs mt-2.5 font-normal leading-relaxed">
+        Gestiona tu comida en casa, evita el desperdicio y nunca te quedes sin lo esencial.
+      </p>
+    </div>
+
+    <!-- Live Sync Chip -->
+    <div class="w-full mb-4 rounded-xl bg-[#ddf0e4] px-4 py-2.5 flex items-center justify-between border border-[#cbe4d4] shadow-xs">
+      <div class="flex items-center gap-2.5">
+        <span class="w-2.5 h-2.5 rounded-full bg-[#06382b] inline-block"></span>
+        <span class="text-xs font-semibold text-[#164234]">Sincronización en vivo para parejas</span>
+      </div>
+      <span class="material-symbols-outlined text-[#164234] text-base" style="font-variation-settings: 'wght' 500;">sync</span>
+    </div>
+
+    <!-- Card de Acceso -->
+    <div class="w-full bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-[#e2efe7] flex flex-col gap-3.5">
+      <form id="authForm" class="flex flex-col gap-3">
+        <div>
+          <label for="email" class="text-xs font-medium text-[#2d473b] mb-1 flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-base text-[#3d5a4d]">mail</span>
+            <span>Correo electrónico</span>
+          </label>
+          <input id="email" type="email" autocomplete="email" placeholder="ejemplo@hogar.com" 
+            class="w-full h-11 px-3.5 rounded-xl bg-[#e5f4eb] text-[#0d2a1f] placeholder:text-[#6a8779] text-sm border-0 focus:ring-2 focus:ring-[#06382b] focus:outline-none transition-all">
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label for="password" class="text-xs font-medium text-[#2d473b] flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-base text-[#3d5a4d]">lock</span>
+              <span>Contraseña</span>
+            </label>
+            <button type="button" id="forgotPasswordBtn" class="text-xs text-[#2d473b] hover:text-[#06382b] hover:underline font-medium">
+              ¿La olvidaste?
+            </button>
+          </div>
+          <div class="relative flex items-center">
+            <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" 
+              class="w-full h-11 pl-3.5 pr-11 rounded-xl bg-[#e5f4eb] text-[#0d2a1f] placeholder:text-[#6a8779] text-sm border-0 focus:ring-2 focus:ring-[#06382b] focus:outline-none transition-all tracking-wider">
+            <button type="button" id="togglePasswordBtn" class="absolute right-0 pr-3.5 h-full flex items-center justify-center text-[#4a6b5c] hover:text-[#06382b]">
+              <span class="material-symbols-outlined text-lg" id="passwordEyeIcon">visibility</span>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" id="loginBtn" class="w-full h-12 rounded-xl bg-[#06382b] hover:bg-[#04281f] text-white font-bold text-sm shadow-sm active:scale-98 transition-all flex items-center justify-center gap-2 mt-1">
+          <span>Iniciar Sesión</span>
+          <span class="material-symbols-outlined text-base">arrow_forward</span>
+        </button>
+      </form>
+
+      <div class="relative flex py-0.5 items-center justify-center">
+        <div class="w-full h-px bg-[#e4ede7]"></div>
+        <span class="absolute bg-white px-3 text-xs text-[#5a7769] font-normal">o continúa con</span>
+      </div>
+
+      <!-- Botón Google -->
+      <button type="button" id="googleLoginBtn" class="w-full h-11 rounded-xl bg-[#d7ede0] hover:bg-[#cbe5d5] text-[#0b3a2d] font-bold text-xs flex items-center justify-center gap-2.5 active:scale-98 transition-all">
+        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+        </svg>
+        <span>Entrar con Google</span>
+      </button>
+
+      <!-- Botón Modo Local -->
+      <button type="button" id="quickLocalBtn" class="w-full h-11 rounded-xl bg-[#d7ede0] hover:bg-[#cbe5d5] text-[#0b3a2d] font-bold text-xs flex items-center justify-center gap-2.5 active:scale-98 transition-all">
+        <span class="material-symbols-outlined text-lg text-[#0b3a2d]">storefront</span>
+        <span>Modo Local / Probar Demo</span>
+      </button>
+
+      <p id="authMessage" class="text-xs text-center font-semibold min-h-[16px] text-[#06382b]" aria-live="polite"></p>
+    </div>
+
+    <!-- Código de Invitación Familiar -->
+    <div class="mt-3.5 w-full rounded-2xl bg-[#ddf0e4] p-4 flex flex-col gap-2 border border-[#cbe4d4]">
+      <div class="flex items-center gap-2 text-[#06382b] font-bold text-sm">
+        <span class="material-symbols-outlined text-lg">person_add</span>
+        <span>¿Tu pareja ya creó la despensa?</span>
+      </div>
+      <p class="text-xs text-[#3b594b] leading-tight">
+        Únete al inventario común introduciendo el código familiar de 6 dígitos.
+      </p>
+      <form id="acceptInviteForm" class="mt-1 flex items-center gap-2">
+        <input id="acceptInviteCode" type="text" maxlength="10" placeholder="CÓDIGO (ej. CASA88)" 
+          class="flex-1 uppercase tracking-wider h-11 px-3.5 rounded-xl bg-white text-[#06382b] text-xs font-bold border-0 focus:ring-2 focus:ring-[#06382b] focus:outline-none">
+        <button type="submit" class="h-11 px-5 rounded-xl bg-[#06382b] hover:bg-[#04281f] text-white font-bold text-xs active:scale-95 transition-all">
+          Unirse
+        </button>
+      </form>
+    </div>
+
+    <!-- Footer de Registro y Seguridad -->
+    <div class="flex flex-col items-center gap-1.5 mt-5 mb-2 text-center">
+      <p class="text-xs text-[#355345]">
+        ¿Aún no tienes cuenta? <button type="button" id="openSignupBtn" class="font-bold underline text-[#06382b] hover:text-[#0a523e]">Crear una cuenta nueva</button>
+      </p>
+      <p class="text-[11px] text-[#557364]">
+        Tus datos se sincronizan de forma cifrada y localmente segura.
+      </p>
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- 2. VISTA PRINCIPAL DE LA APP (DASHBOARD)   -->
+  <!-- ========================================== -->
+  <section id="appView" class="hidden flex-1 flex flex-col pb-24">
+    
+    <!-- Topbar Fija -->
+    <header class="sticky top-0 z-40 bg-surface/85 backdrop-blur-md border-b border-surface-container-high shadow-xs">
+      <div class="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-primary-container text-primary-fixed flex items-center justify-center shadow-xs">
+            <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">shopping_basket</span>
+          </div>
+          <div>
+            <h1 class="font-bold text-primary text-base leading-tight" id="pantryName">Mi Despensa</h1>
+            <div class="flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-primary-container animate-pulse"></span>
+              <span class="text-xs text-secondary font-medium" id="memberStatus">Local / Pareja</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="headerResetDemoBtn" type="button" title="Restablecer datos demo" 
+            class="w-9 h-9 rounded-xl bg-surface-container text-primary hover:bg-surface-container-high flex items-center justify-center transition-colors">
+            <span class="material-symbols-outlined text-lg">restart_alt</span>
+          </button>
+          <button id="signOutBtn" type="button" title="Cerrar sesión" 
+            class="w-9 h-9 rounded-xl bg-surface-container text-secondary hover:text-error hover:bg-error-container flex items-center justify-center transition-colors">
+            <span class="material-symbols-outlined text-lg">logout</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Contenido Principal con Contenedor Responsive -->
+    <main class="max-w-2xl mx-auto w-full px-4 pt-4 flex flex-col gap-4">
+
+      <!-- ========================================== -->
+      <!-- TAB 1: INVENTARIO                         -->
+      <!-- ========================================== -->
+      <div id="tabInventory" class="flex flex-col gap-4">
+
+        <!-- Banner Hogar Compartido & Pareja -->
+        <section class="bg-surface-container rounded-2xl p-3.5 shadow-xs border border-surface-container-high flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="relative flex items-center justify-center shrink-0">
+              <span class="w-3 h-3 rounded-full bg-primary-container"></span>
+              <span class="absolute w-3 h-3 rounded-full bg-primary-fixed animate-ping opacity-75"></span>
+            </div>
+            <div class="flex flex-col min-w-0">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[11px] font-bold text-secondary uppercase tracking-wider">Hogar Compartido</span>
+                <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-secondary-container text-on-secondary-container font-semibold">Sincronizado</span>
+              </div>
+              <p class="text-xs text-on-surface-variant truncate">
+                Conectado con <span class="font-bold text-primary" id="partnerNameDisplay">Sofía</span> • Modo local activo
+              </p>
+            </div>
+          </div>
+          <button id="inviteParejaBtn" type="button" class="shrink-0 px-3 py-1.5 rounded-xl bg-surface-container-lowest text-primary font-bold text-xs shadow-xs active:scale-95 transition-all flex items-center gap-1 hover:bg-surface-bright">
+            <span class="material-symbols-outlined text-sm">person_add</span>
+            <span>Pareja</span>
+          </button>
+        </section>
+
+        <!-- Bento Grid de Métricas Clave -->
+        <section class="grid grid-cols-3 gap-2.5">
+          <!-- Total -->
+          <div class="bg-surface-container-lowest p-3.5 rounded-2xl shadow-xs border border-surface-container-high flex flex-col justify-between">
+            <div class="flex items-center justify-between text-secondary">
+              <span class="text-[11px] font-bold uppercase tracking-wider">Total</span>
+              <span class="material-symbols-outlined text-base">kitchen</span>
+            </div>
+            <div class="mt-2">
+              <span class="text-2xl font-extrabold text-primary block leading-none" id="metricTotal">0</span>
+              <span class="text-xs text-on-surface-variant mt-1 block">Artículos</span>
+            </div>
+          </div>
+          <!-- Por Vencer -->
+          <div class="bg-surface-container-lowest p-3.5 rounded-2xl shadow-xs border border-surface-container-high flex flex-col justify-between">
+            <div class="flex items-center justify-between text-tertiary-container">
+              <span class="text-[11px] font-bold uppercase tracking-wider">Por Vencer</span>
+              <span class="material-symbols-outlined text-base" style="font-variation-settings: 'FILL' 1;">timer</span>
+            </div>
+            <div class="mt-2">
+              <span class="text-2xl font-extrabold text-tertiary-container block leading-none" id="metricExpiring">0</span>
+              <span class="text-xs text-tertiary font-semibold mt-1 block">≤ 3 días</span>
+            </div>
+          </div>
+          <!-- Reponer -->
+          <div class="bg-surface-container-lowest p-3.5 rounded-2xl shadow-xs border border-surface-container-high flex flex-col justify-between">
+            <div class="flex items-center justify-between text-error">
+              <span class="text-[11px] font-bold uppercase tracking-wider">Reponer</span>
+              <span class="material-symbols-outlined text-base">shopping_basket</span>
+            </div>
+            <div class="mt-2">
+              <span class="text-2xl font-extrabold text-error block leading-none" id="metricLowStock">0</span>
+              <span class="text-xs text-error font-semibold mt-1 block">Bajo stock</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Banner Cero Desperdicio -->
+        <section id="zeroWasteBanner" class="relative overflow-hidden rounded-2xl bg-primary-container text-on-primary shadow-xs p-4 flex items-center justify-between">
+          <div class="flex flex-col max-w-[70%] z-10">
+            <span class="text-[11px] font-bold text-primary-fixed uppercase tracking-wider mb-0.5">Cero Desperdicio</span>
+            <h2 class="text-base font-bold text-surface-bright leading-snug" id="zeroWasteTitle">Cocinen con lo que vence hoy</h2>
+            <p class="text-xs text-primary-fixed-dim mt-0.5" id="zeroWasteDesc">Revisa los productos con fecha límite para el menú de hoy.</p>
+          </div>
+          <div class="w-16 h-16 rounded-xl bg-primary text-primary-fixed flex items-center justify-center shrink-0 shadow-sm">
+            <span class="material-symbols-outlined text-3xl">restaurant</span>
+          </div>
+        </section>
+
+        <!-- Acciones Rápidas (2 Columnas) -->
+        <section class="grid grid-cols-2 gap-2.5">
+          <button id="quickScanBtn" type="button" class="bg-surface-container-lowest p-3.5 rounded-2xl shadow-xs border border-surface-container-high flex flex-col items-start gap-2 text-left active:scale-[0.98] transition-all hover:bg-surface-container-low group">
+            <div class="w-9 h-9 rounded-xl bg-primary-fixed flex items-center justify-center text-on-primary-fixed group-hover:scale-105 transition-transform">
+              <span class="material-symbols-outlined text-xl">qr_code_scanner</span>
+            </div>
+            <div>
+              <span class="font-bold text-sm text-primary block leading-tight">Escanear Barra</span>
+              <span class="text-xs text-on-surface-variant">Reconocer o restar</span>
+            </div>
+          </button>
+          <button id="quickAddBtn" type="button" class="bg-surface-container-lowest p-3.5 rounded-2xl shadow-xs border border-surface-container-high flex flex-col items-start gap-2 text-left active:scale-[0.98] transition-all hover:bg-surface-container-low group">
+            <div class="w-9 h-9 rounded-xl bg-secondary-container flex items-center justify-center text-primary group-hover:scale-105 transition-transform">
+              <span class="material-symbols-outlined text-xl">add_shopping_cart</span>
+            </div>
+            <div>
+              <span class="font-bold text-sm text-primary block leading-tight">Nuevo Producto</span>
+              <span class="text-xs text-on-surface-variant">Manual o con foto</span>
+            </div>
+          </button>
+        </section>
+
+        <!-- Buscador y Chips de Filtrado -->
+        <section class="flex flex-col gap-2.5">
+          <div class="relative w-full">
+            <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary text-xl pointer-events-none">search</span>
+            <input id="searchInput" type="search" placeholder="Buscar por producto, marca o código…" 
+              class="w-full h-12 pl-11 pr-11 bg-surface-container-lowest text-on-surface rounded-2xl shadow-xs border border-surface-container-high text-sm placeholder:text-outline focus:outline-none focus:border-primary transition-all">
+            <button id="clearSearchBtn" type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-secondary hover:text-primary p-1 rounded-lg">
+              <span class="material-symbols-outlined text-base">close</span>
+            </button>
+          </div>
+
+          <!-- Filtros Horizontales (Scroll) -->
+          <div class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar" id="filterChipsContainer">
+            <button class="filter-chip shrink-0 px-3.5 py-1.5 rounded-full bg-primary text-on-primary font-semibold text-xs shadow-xs transition-transform active:scale-95" data-filter="all">
+              Todos (<span id="countAll">0</span>)
+            </button>
+            <button class="filter-chip shrink-0 px-3.5 py-1.5 rounded-full bg-surface-container text-on-secondary-container font-semibold text-xs hover:bg-surface-container-high transition-transform active:scale-95 flex items-center gap-1" data-filter="expiring">
+              <span class="w-1.5 h-1.5 rounded-full bg-tertiary-container"></span>
+              Por Caducar (<span id="countExpiring">0</span>)
+            </button>
+            <button class="filter-chip shrink-0 px-3.5 py-1.5 rounded-full bg-surface-container text-on-secondary-container font-semibold text-xs hover:bg-surface-container-high transition-transform active:scale-95 flex items-center gap-1" data-filter="low-stock">
+              <span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+              Stock Bajo (<span id="countLowStock">0</span>)
+            </button>
+            <button class="filter-chip shrink-0 px-3.5 py-1.5 rounded-full bg-surface-container text-on-secondary-container font-semibold text-xs hover:bg-surface-container-high transition-transform active:scale-95" data-filter="loc-Despensa">
+              Despensa (<span id="countDespensa">0</span>)
+            </button>
+            <button class="filter-chip shrink-0 px-3.5 py-1.5 rounded-full bg-surface-container text-on-secondary-container font-semibold text-xs hover:bg-surface-container-high transition-transform active:scale-95" data-filter="loc-Nevera">
+              Nevera (<span id="countNevera">0</span>)
+            </button>
+            <button class="filter-chip shrink-0 px-3.5 py-1.5 rounded-full bg-surface-container text-on-secondary-container font-semibold text-xs hover:bg-surface-container-high transition-transform active:scale-95" data-filter="loc-Congelador">
+              Congelador (<span id="countCongelador">0</span>)
+            </button>
+            <button class="filter-chip shrink-0 px-3.5 py-1.5 rounded-full bg-surface-container text-on-secondary-container font-semibold text-xs hover:bg-surface-container-high transition-transform active:scale-95" data-filter="loc-Limpieza">
+              Limpieza (<span id="countLimpieza">0</span>)
+            </button>
+          </div>
+        </section>
+
+        <!-- Título de Sección y Botón Refrescar -->
+        <div class="flex items-center justify-between pt-1">
+          <div>
+            <span class="text-[11px] font-bold text-secondary uppercase tracking-wider">Lo que hay en casa</span>
+            <h3 class="text-lg font-bold text-primary">Inventario Hogar</h3>
+          </div>
+          <button id="refreshBtn" type="button" class="flex items-center gap-1 font-semibold text-xs text-primary bg-surface-container-low px-3 py-1.5 rounded-xl hover:bg-surface-container active:scale-95 transition-all">
+            <span class="material-symbols-outlined text-base">sync</span>
+            <span>Actualizar</span>
+          </button>
+        </div>
+
+        <!-- Flujo de Acordeones por Ubicación -->
+        <div id="inventoryContainer" class="flex flex-col gap-3">
+          <!-- Se renderiza dinámicamente: Despensa, Nevera, Congelador, Limpieza -->
+          <div class="bg-surface-container-lowest rounded-2xl p-6 text-center text-secondary border border-surface-container-high">
+            Cargando despensa...
+          </div>
+        </div>
+
+        <!-- Pie de Auditoría Colaborativa -->
+        <footer class="mt-2 p-3.5 rounded-2xl bg-surface-container-low border border-surface-container-high flex items-center justify-between text-on-surface-variant text-xs">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-base">spa</span>
+            <span id="auditFooterText">Último ajuste hecho por Sofía hace 14 min</span>
+          </div>
+          <span class="material-symbols-outlined text-xs text-secondary">chevron_right</span>
+        </footer>
+
+      </div><!-- Fin Tab Inventario -->
+
+      <!-- ========================================== -->
+      <!-- TAB 2: ALERTAS & CADUCIDADES               -->
+      <!-- ========================================== -->
+      <div id="tabAlerts" class="hidden flex flex-col gap-4">
+
+        <!-- Encabezado de Alertas -->
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold text-secondary uppercase tracking-wider">Centro de Alertas</span>
+            <span class="bg-error-container text-on-error-container text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+              <span id="alertsPendingCount">0 pendientes</span>
+            </span>
+          </div>
+          <h2 class="text-2xl font-bold text-primary tracking-tight">Alertas del Hogar</h2>
+          <p class="text-xs text-on-surface-variant">Evita el desperdicio de comida y mantén tu despensa abastecida en equipo.</p>
+        </div>
+
+        <!-- Pestañas Filtros de Alertas -->
+        <div class="flex items-center gap-2" id="alertsTabFilter">
+          <button class="alert-tab-btn active bg-primary text-on-primary text-xs font-bold px-4 py-2 rounded-full shadow-xs transition-colors flex items-center gap-1.5" data-tab="all">
+            <span>Todas</span>
+            <span class="bg-primary-container text-on-primary text-[10px] px-1.5 py-0.2 rounded-full" id="alertsCountAll">0</span>
+          </button>
+          <button class="alert-tab-btn bg-surface-container text-on-surface-variant text-xs font-semibold px-4 py-2 rounded-full transition-colors flex items-center gap-1.5" data-tab="expiry">
+            <span>Caducidades</span>
+            <span class="bg-surface-variant text-on-surface-variant text-[10px] px-1.5 py-0.2 rounded-full" id="alertsCountExpiry">0</span>
+          </button>
+          <button class="alert-tab-btn bg-surface-container text-on-surface-variant text-xs font-semibold px-4 py-2 rounded-full transition-colors flex items-center gap-1.5" data-tab="stock">
+            <span>Stock Mínimo</span>
+            <span class="bg-surface-variant text-on-surface-variant text-[10px] px-1.5 py-0.2 rounded-full" id="alertsCountStock">0</span>
+          </button>
+        </div>
+
+        <!-- Lista Dinámica de Alertas -->
+        <div id="alertsListContainer" class="flex flex-col gap-3">
+          <!-- Renderizado en app.js -->
+        </div>
+
+      </div><!-- Fin Tab Alertas -->
+
+      <!-- ========================================== -->
+      <!-- TAB 3: PAREJA & IMPORTACIÓN               -->
+      <!-- ========================================== -->
+      <div id="tabPartner" class="hidden flex flex-col gap-4">
+
+        <div class="flex flex-col gap-1">
+          <span class="text-[11px] font-bold text-secondary uppercase tracking-wider">Hogar & Colaboración</span>
+          <h2 class="text-2xl font-bold text-primary tracking-tight">Despensa Compartida</h2>
+          <p class="text-xs text-on-surface-variant">Sincroniza el inventario en tiempo real con tu pareja o familia.</p>
+        </div>
+
+        <!-- Tarjeta: Invitar Pareja -->
+        <div class="bg-surface-container-lowest rounded-2xl p-5 shadow-xs border border-surface-container-high flex flex-col gap-3">
+          <div class="flex items-center gap-2.5 text-primary font-bold text-sm">
+            <span class="material-symbols-outlined text-xl">favorite</span>
+            <span>Compartir con tu pareja</span>
+          </div>
+          <p class="text-xs text-on-surface-variant leading-relaxed">
+            Genera un código de invitación. Tu pareja solo debe ingresar este código en su teléfono para acceder a la misma despensa.
+          </p>
+          <div class="flex items-center gap-2">
+            <input id="inviteCode" readonly placeholder="Código de invitación" 
+              class="flex-1 h-11 px-3.5 rounded-xl bg-surface-container-low text-on-surface text-sm font-bold tracking-wider border border-outline-variant/60">
+            <button id="copyInviteBtn" type="button" class="h-11 px-4 rounded-xl bg-primary text-on-primary font-bold text-xs active:scale-95 transition-transform flex items-center gap-1">
+              <span class="material-symbols-outlined text-base">content_copy</span>
+              <span>Copiar</span>
+            </button>
+          </div>
+          <p id="inviteMessage" class="text-xs text-primary font-medium" aria-live="polite"></p>
+        </div>
+
+        <!-- Tarjeta: Importar desde Excel / CSV -->
+        <div class="bg-surface-container-lowest rounded-2xl p-5 shadow-xs border border-surface-container-high flex flex-col gap-3">
+          <div class="flex items-center gap-2.5 text-primary font-bold text-sm">
+            <span class="material-symbols-outlined text-xl">table_view</span>
+            <span>Cargar catálogo desde Excel</span>
+          </div>
+          <p class="text-xs text-on-surface-variant leading-relaxed">
+            Descarga la plantilla oficial, completa los productos y guarda como archivo CSV para importarlo en un solo paso.
+          </p>
+          <a href="./plantilla_inventario.xlsx" download class="inline-flex items-center justify-center gap-2 h-11 px-4 rounded-xl bg-surface-container text-primary font-bold text-xs hover:bg-surface-container-high transition-colors">
+            <span class="material-symbols-outlined text-base">download</span>
+            <span>Descargar plantilla Excel</span>
+          </a>
+          <div class="flex flex-col gap-2 pt-1">
+            <input id="csvFile" type="file" accept=".csv,text/csv" class="text-xs file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:bg-primary-container file:text-on-primary file:text-xs file:font-semibold">
+            <button id="importBtn" type="button" class="h-11 rounded-xl bg-primary text-on-primary font-bold text-xs active:scale-95 transition-transform flex items-center justify-center gap-1.5">
+              <span class="material-symbols-outlined text-base">upload_file</span>
+              <span>Importar CSV a la Despensa</span>
+            </button>
+          </div>
+          <p id="importMessage" class="text-xs text-primary font-medium" aria-live="polite"></p>
+        </div>
+
+        <!-- Tarjeta: Mantenimiento Local -->
+        <div class="bg-surface-container-lowest rounded-2xl p-5 shadow-xs border border-surface-container-high flex flex-col gap-3">
+          <div class="flex items-center gap-2.5 text-primary font-bold text-sm">
+            <span class="material-symbols-outlined text-xl">settings</span>
+            <span>Ajustes del Modo Local</span>
+          </div>
+          <p class="text-xs text-on-surface-variant">
+            Puedes restablecer los productos y movimientos de demostración en cualquier momento para reiniciar tus pruebas.
+          </p>
+          <button id="resetDemoBtn" type="button" class="h-11 rounded-xl bg-surface-container text-error font-bold text-xs hover:bg-error-container transition-colors flex items-center justify-center gap-1.5">
+            <span class="material-symbols-outlined text-base">restart_alt</span>
+            <span>Restablecer productos demo iniciales</span>
+          </button>
+        </div>
+
+      </div><!-- Fin Tab Pareja -->
+
+    </main>
+
+    <!-- ========================================== -->
+    <!-- BARRA INFERIOR FIJA DE NAVEGACIÓN (BOTTOM BAR) -->
+    <!-- ========================================== -->
+    <nav class="fixed bottom-0 left-0 right-0 z-50 bg-surface/90 backdrop-blur-xl border-t border-surface-container-high shadow-lg pb-safe">
+      <div class="max-w-2xl mx-auto flex items-center justify-around h-16 px-2">
+        <!-- Tab 1: Inventario -->
+        <button type="button" class="nav-tab-btn flex flex-col items-center justify-center min-w-[56px] min-h-[44px] text-primary font-bold transition-colors" data-target="tabInventory">
+          <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+          <span class="text-[11px]">Inventario</span>
+        </button>
+
+        <!-- Tab 2: Alertas -->
+        <button type="button" class="nav-tab-btn relative flex flex-col items-center justify-center min-w-[56px] min-h-[44px] text-on-surface-variant hover:text-primary transition-colors" data-target="tabAlerts">
+          <div class="relative flex items-center justify-center">
+            <span class="material-symbols-outlined text-2xl">notifications</span>
+            <span id="navAlertsBadge" class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-error ring-2 ring-surface"></span>
+          </div>
+          <span class="text-[11px]">Alertas</span>
+        </button>
+
+        <!-- Botón Central Agregar -->
+        <button type="button" id="bottomAddBtn" class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] text-on-surface-variant hover:text-primary transition-colors">
+          <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary shadow-md active:scale-95 transition-transform">
+            <span class="material-symbols-outlined text-xl">add</span>
+          </div>
+          <span class="text-[10px] font-bold text-primary mt-0.5">Agregar</span>
+        </button>
+
+        <!-- Tab 3: Pareja -->
+        <button type="button" class="nav-tab-btn flex flex-col items-center justify-center min-w-[56px] min-h-[44px] text-on-surface-variant hover:text-primary transition-colors" data-target="tabPartner">
+          <span class="material-symbols-outlined text-2xl">group</span>
+          <span class="text-[11px]">Pareja</span>
+        </button>
+      </div>
+    </nav>
+
+  </section>
+
+  <!-- ========================================== -->
+  <!-- MODAL 1: FORMULARIO DE PRODUCTO (NUEVO/EDIT) -->
+  <!-- ========================================== -->
+  <div id="productFormModal" class="hidden fixed inset-0 z-50 modal-overlay flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-surface rounded-t-3xl sm:rounded-3xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-surface-container-high">
+      
+      <!-- Encabezado Modal -->
+      <div class="h-14 px-5 border-b border-surface-container-high flex items-center justify-between bg-surface-container-low shrink-0">
+        <h2 id="productFormTitle" class="font-bold text-primary text-base">Nuevo Producto</h2>
+        <button id="closeProductFormBtn" type="button" class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-secondary hover:text-primary">
+          <span class="material-symbols-outlined text-lg">close</span>
+        </button>
+      </div>
+
+      <!-- Contenido Scrolleable con Vista Previa en Vivo -->
+      <div class="p-5 overflow-y-auto flex flex-col gap-4 no-scrollbar">
+        <form id="productForm" class="flex flex-col gap-4">
+          <input id="productId" type="hidden">
+
+          <!-- Vista Previa en Vivo -->
+          <div class="bg-surface-container-lowest rounded-2xl p-3.5 shadow-xs border border-surface-container-high flex items-center gap-3">
+            <div class="relative w-16 h-16 rounded-xl bg-surface-container overflow-hidden shrink-0 flex items-center justify-center text-primary" id="previewImageWrapper">
+              <span class="material-symbols-outlined text-3xl" id="previewLocationIcon">shelves</span>
+            </div>
+            <div class="min-w-0 flex-1">
+              <span class="text-[10px] font-bold text-secondary uppercase tracking-wider block">Vista Previa</span>
+              <h3 class="font-bold text-primary text-sm truncate" id="previewTitle">Nombre del producto</h3>
+              <p class="text-xs text-on-surface-variant mt-0.5" id="previewSubtitle">0 unidades • En Despensa</p>
+            </div>
+          </div>
+
+          <!-- SECCIÓN 1: Datos Generales -->
+          <div class="bg-surface-container-lowest rounded-2xl p-4 shadow-xs border border-surface-container-high flex flex-col gap-3">
+            <span class="text-[11px] font-bold text-secondary uppercase tracking-wider">1. Datos Generales</span>
+            <div>
+              <label for="productName" class="text-xs font-semibold text-on-surface block mb-1">Nombre del producto *</label>
+              <input id="productName" required maxlength="120" placeholder="Ej. Arroz Grano Largo, Salsa de Tomate..." 
+                class="w-full h-11 px-3.5 rounded-xl bg-surface-container-low text-on-surface text-sm border border-outline-variant/60 focus:outline-none focus:border-primary">
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label for="productBrand" class="text-xs font-semibold text-on-surface block mb-1">Marca</label>
+                <input id="productBrand" maxlength="100" placeholder="Ej. Tucapel, Carozzi" 
+                  class="w-full h-11 px-3.5 rounded-xl bg-surface-container-low text-on-surface text-sm border border-outline-variant/60 focus:outline-none focus:border-primary">
+              </div>
+              <div>
+                <label for="productFormat" class="text-xs font-semibold text-on-surface block mb-1">Formato</label>
+                <input id="productFormat" maxlength="100" placeholder="Ej. Bolsa 1 kg, Lata 200g" 
+                  class="w-full h-11 px-3.5 rounded-xl bg-surface-container-low text-on-surface text-sm border border-outline-variant/60 focus:outline-none focus:border-primary">
+              </div>
+            </div>
+
+            <!-- Selector de Ubicación en Cuadrícula -->
+            <div>
+              <label class="text-xs font-semibold text-on-surface block mb-1.5">Ubicación de almacenamiento</label>
+              <input type="hidden" id="productLocation" value="Despensa">
+              <div class="grid grid-cols-2 gap-2" id="locationChipsGroup">
+                <button type="button" class="loc-chip active flex items-center gap-2 px-3 py-2.5 rounded-xl font-bold text-xs bg-primary-container text-on-primary transition-all text-left" data-loc="Despensa">
+                  <span class="material-symbols-outlined text-base">shelves</span>
+                  <span>Despensa</span>
+                </button>
+                <button type="button" class="loc-chip flex items-center gap-2 px-3 py-2.5 rounded-xl font-semibold text-xs bg-surface-container-low text-on-surface transition-all text-left" data-loc="Nevera">
+                  <span class="material-symbols-outlined text-base">kitchen</span>
+                  <span>Nevera</span>
+                </button>
+                <button type="button" class="loc-chip flex items-center gap-2 px-3 py-2.5 rounded-xl font-semibold text-xs bg-surface-container-low text-on-surface transition-all text-left" data-loc="Congelador">
+                  <span class="material-symbols-outlined text-base">ac_unit</span>
+                  <span>Congelador</span>
+                </button>
+                <button type="button" class="loc-chip flex items-center gap-2 px-3 py-2.5 rounded-xl font-semibold text-xs bg-surface-container-low text-on-surface transition-all text-left" data-loc="Limpieza">
+                  <span class="material-symbols-outlined text-base">sanitizer</span>
+                  <span>Limpieza</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Código de Barras -->
+            <div>
+              <label for="productBarcodes" class="text-xs font-semibold text-on-surface block mb-1">Código de barras</label>
+              <div class="flex items-center gap-2">
+                <input id="productBarcodes" placeholder="Escanear o tipear EAN" 
+                  class="flex-1 h-11 px-3.5 rounded-xl bg-surface-container-low text-on-surface font-mono text-sm border border-outline-variant/60 focus:outline-none focus:border-primary">
+                <button type="button" id="scanFromFormBtn" class="h-11 px-3.5 bg-surface-container text-primary rounded-xl font-bold text-xs flex items-center gap-1 active:scale-95 transition-transform">
+                  <span class="material-symbols-outlined text-lg">barcode_scanner</span>
+                  <span>Escanear</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECCIÓN 2: Control de Existencias -->
+          <div class="bg-surface-container-lowest rounded-2xl p-4 shadow-xs border border-surface-container-high flex flex-col gap-3">
+            <span class="text-[11px] font-bold text-secondary uppercase tracking-wider">2. Control de Existencias</span>
+            
+            <div class="flex items-center justify-between bg-surface-container-low rounded-xl p-2.5">
+              <div class="flex items-center gap-2">
+                <button type="button" id="decQtyBtn" class="w-10 h-10 rounded-xl bg-surface-container-lowest text-primary flex items-center justify-center font-extrabold text-lg shadow-xs active:scale-90 transition-transform">
+                  −
+                </button>
+                <div class="w-16 text-center">
+                  <input id="productQuantity" type="number" min="0" step="0.5" required value="1" 
+                    class="w-full text-center font-extrabold text-2xl text-primary bg-transparent focus:outline-none">
+                </div>
+                <button type="button" id="incQtyBtn" class="w-10 h-10 rounded-xl bg-surface-container-lowest text-primary flex items-center justify-center font-extrabold text-lg shadow-xs active:scale-90 transition-transform">
+                  ＋
+                </button>
+              </div>
+
+              <!-- Selector Unidad -->
+              <div class="flex items-center">
+                <select id="productUnit" class="h-10 px-3 bg-surface-container-lowest text-on-surface font-bold text-xs rounded-xl border border-outline-variant/60 focus:outline-none">
+                  <option value="unidades">unidades</option>
+                  <option value="paquetes">paquetes</option>
+                  <option value="litros">litros</option>
+                  <option value="kilos">kilos</option>
+                  <option value="latas">latas</option>
+                  <option value="bolsas">bolsas</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Switch Stock Mínimo -->
+            <div class="flex items-center justify-between pt-1">
+              <div>
+                <label for="productMinimum" class="text-xs font-semibold text-on-surface block leading-tight">Aviso de Stock Mínimo</label>
+                <span class="text-[11px] text-secondary">Avisa cuando queden menos de:</span>
+              </div>
+              <div class="w-20">
+                <input id="productMinimum" type="number" min="0" step="1" value="2" 
+                  class="w-full h-9 text-center font-bold text-sm rounded-xl bg-surface-container-low text-primary border border-outline-variant/60 focus:outline-none">
+              </div>
+            </div>
+          </div>
+
+          <!-- SECCIÓN 3: Vencimiento & Lotes Múltiples -->
+          <div class="bg-surface-container-lowest rounded-2xl p-4 shadow-xs border border-surface-container-high flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-bold text-secondary uppercase tracking-wider">3. Fechas de Caducidad & Lotes</span>
+              <span class="text-[10px] font-bold text-primary bg-primary-fixed/60 px-2 py-0.5 rounded-full">FEFO Inteligente</span>
+            </div>
+            
+            <p class="text-xs text-on-surface-variant leading-tight">
+              Registra diferentes fechas para productos iguales. Se consumirá y descontará primero el que vence antes.
+            </p>
+
+            <!-- Lista Dinámica de Lotes -->
+            <div id="batchesListContainer" class="flex flex-col gap-2">
+              <!-- Se generarán aquí las filas de lotes -->
+            </div>
+
+            <button type="button" id="addBatchBtn" class="w-full h-10 rounded-xl bg-surface-container text-primary font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-surface-container-high transition-colors">
+              <span class="material-symbols-outlined text-base">add_circle</span>
+              <span>＋ Agregar otro lote con fecha diferente</span>
+            </button>
+
+            <!-- Anticipación de Alerta -->
+            <div class="pt-1 border-t border-surface-container/60">
+              <label class="text-xs font-semibold text-on-surface block mb-1.5">Avisarme con anticipación:</label>
+              <input type="hidden" id="productExpiryDays" value="3">
+              <div class="grid grid-cols-4 gap-1.5" id="expiryDaysGroup">
+                <button type="button" class="exp-chip px-2 py-1.5 rounded-xl font-semibold text-[11px] bg-surface-container-low text-on-surface" data-days="1">1 día</button>
+                <button type="button" class="exp-chip active px-2 py-1.5 rounded-xl font-bold text-[11px] bg-primary-container text-on-primary shadow-xs" data-days="3">3 días</button>
+                <button type="button" class="exp-chip px-2 py-1.5 rounded-xl font-semibold text-[11px] bg-surface-container-low text-on-surface" data-days="7">1 sem</button>
+                <button type="button" class="exp-chip px-2 py-1.5 rounded-xl font-semibold text-[11px] bg-surface-container-low text-on-surface" data-days="14">2 sem</button>
+              </div>
+            </div>
+          </div>
+
+          <p id="productFormMessage" class="text-xs text-primary font-bold text-center" aria-live="polite"></p>
+
+          <div class="flex items-center gap-2 pt-2">
+            <button type="button" id="cancelProductBtn" class="h-12 px-5 rounded-2xl font-bold text-xs text-secondary bg-surface-container hover:bg-surface-container-high transition-colors">
+              Cancelar
+            </button>
+            <button type="submit" id="saveProductBtn" class="flex-1 h-12 rounded-2xl bg-primary text-on-primary font-bold text-sm shadow-md active:scale-98 transition-transform flex items-center justify-center gap-2">
+              <span class="material-symbols-outlined text-lg">check</span>
+              <span>Guardar Producto</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL 2: AJUSTE RÁPIDO DE STOCK            -->
+  <!-- ========================================== -->
+  <div id="movementModal" class="hidden fixed inset-0 z-50 modal-overlay flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-surface rounded-t-3xl sm:rounded-3xl max-w-sm w-full p-5 shadow-2xl flex flex-col gap-4 border border-surface-container-high">
+      <div class="flex items-center justify-between pb-1 border-b border-surface-container-high">
+        <h2 id="movementTitle" class="font-bold text-primary text-base">Actualizar Existencias</h2>
+        <button id="closeMovementBtn" type="button" class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-secondary hover:text-primary">
+          <span class="material-symbols-outlined text-lg">close</span>
+        </button>
+      </div>
+
+      <p id="movementProductName" class="text-xs text-secondary font-medium leading-relaxed"></p>
+
+      <form id="movementForm" class="flex flex-col gap-3">
+        <input id="movementProductId" type="hidden">
+        
+        <div>
+          <label for="movementType" class="text-xs font-semibold text-on-surface block mb-1">Tipo de movimiento</label>
+          <select id="movementType" class="w-full h-11 px-3 bg-surface-container-low text-on-surface font-semibold text-xs rounded-xl border border-outline-variant/60 focus:outline-none">
+            <option value="in">➕ Ingresar cantidad</option>
+            <option value="out">➖ Descontar cantidad</option>
+            <option value="adjustment">🔄 Ajustar stock a un total</option>
+          </select>
+        </div>
+
+        <div>
+          <label id="movementQuantityLabel" for="movementQuantity" class="text-xs font-semibold text-on-surface block mb-1">Cantidad</label>
+          <input id="movementQuantity" type="number" min="0.01" step="0.5" required value="1" 
+            class="w-full h-11 px-3 bg-surface-container-low text-on-surface font-extrabold text-lg rounded-xl border border-outline-variant/60 focus:outline-none">
+        </div>
+
+        <div>
+          <label for="movementNote" class="text-xs font-semibold text-on-surface block mb-1">Nota (opcional)</label>
+          <input id="movementNote" maxlength="250" placeholder="Ej. Compra supermercado, cena..." 
+            class="w-full h-11 px-3 bg-surface-container-low text-on-surface text-xs rounded-xl border border-outline-variant/60 focus:outline-none">
+        </div>
+
+        <p id="movementMessage" class="text-xs text-primary font-bold text-center" aria-live="polite"></p>
+
+        <button type="submit" class="h-11 rounded-xl bg-primary text-on-primary font-bold text-xs shadow-md active:scale-95 transition-transform flex items-center justify-center gap-1.5 mt-1">
+          <span class="material-symbols-outlined text-base">check</span>
+          <span>Confirmar Ajuste</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL 3: ESCÁNER DE CÓDIGO DE BARRAS       -->
+  <!-- ========================================== -->
+  <div id="scannerModal" class="hidden fixed inset-0 z-50 modal-overlay flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-surface rounded-t-3xl sm:rounded-3xl max-w-md w-full p-5 shadow-2xl flex flex-col gap-3.5 border border-surface-container-high">
+      <div class="flex items-center justify-between pb-1 border-b border-surface-container-high">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-xl">qr_code_scanner</span>
+          <h2 class="font-bold text-primary text-base">Escanear Código de Barras</h2>
+        </div>
+        <button id="closeScannerBtn" type="button" class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-secondary hover:text-primary">
+          <span class="material-symbols-outlined text-lg">close</span>
+        </button>
+      </div>
+
+      <div class="relative overflow-hidden rounded-2xl bg-black">
+        <video id="scannerVideo" playsinline muted class="w-full h-56 object-cover"></video>
+        <div class="absolute inset-0 border-2 border-primary-fixed/60 rounded-2xl pointer-events-none flex items-center justify-center">
+          <div class="w-48 h-24 border border-primary-fixed/80 rounded-lg"></div>
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        <button id="startCameraBtn" type="button" class="flex-1 h-10 rounded-xl bg-primary text-on-primary font-bold text-xs flex items-center justify-center gap-1">
+          <span class="material-symbols-outlined text-base">videocam</span>
+          <span>Activar Cámara</span>
+        </button>
+        <button id="stopCameraBtn" type="button" class="h-10 px-4 rounded-xl bg-surface-container text-secondary font-bold text-xs">
+          Detener
+        </button>
+      </div>
+
+      <div>
+        <label for="barcodeLookup" class="text-xs font-semibold text-on-surface block mb-1">O ingresa el código manual:</label>
+        <div class="flex gap-2">
+          <input id="barcodeLookup" inputmode="numeric" placeholder="Ej. 7801234567890" 
+            class="flex-1 h-10 px-3 bg-surface-container-low text-on-surface font-mono text-xs rounded-xl border border-outline-variant/60 focus:outline-none">
+          <button id="lookupBtn" type="button" class="h-10 px-4 rounded-xl bg-primary-container text-on-primary font-bold text-xs">
+            Buscar
+          </button>
+        </div>
+      </div>
+
+      <p id="scannerMessage" class="text-xs text-primary font-medium text-center" aria-live="polite"></p>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: CREAR NUEVA CUENTA (REGISTRO LOCAL) -->
+  <!-- ========================================== -->
+  <div id="signupModal" class="hidden fixed inset-0 z-50 modal-overlay flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl flex flex-col gap-4 border border-[#e2efe7]">
+      <div class="flex items-center justify-between pb-2 border-b border-[#e2efe7]">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-[#06382b] text-xl">person_add</span>
+          <h2 class="font-bold text-[#06382b] text-base">Crear Cuenta Nueva</h2>
+        </div>
+        <button id="closeSignupModalBtn" type="button" class="w-8 h-8 rounded-full bg-[#e5f4eb] flex items-center justify-center text-[#2d473b] hover:text-[#06382b]">
+          <span class="material-symbols-outlined text-lg">close</span>
+        </button>
+      </div>
+
+      <form id="signupForm" class="flex flex-col gap-3">
+        <div>
+          <label for="signupName" class="text-xs font-semibold text-[#2d473b] mb-1 block">Tu Nombre / Familia</label>
+          <input id="signupName" type="text" placeholder="Ej. Cristian" required
+            class="w-full h-11 px-3.5 rounded-xl bg-[#e5f4eb] text-[#0d2a1f] text-sm border-0 focus:ring-2 focus:ring-[#06382b] focus:outline-none">
+        </div>
+        <div>
+          <label for="signupEmail" class="text-xs font-semibold text-[#2d473b] mb-1 block">Correo Electrónico</label>
+          <input id="signupEmail" type="email" placeholder="ejemplo@hogar.com" required
+            class="w-full h-11 px-3.5 rounded-xl bg-[#e5f4eb] text-[#0d2a1f] text-sm border-0 focus:ring-2 focus:ring-[#06382b] focus:outline-none">
+        </div>
+        <div>
+          <label for="signupPassword" class="text-xs font-semibold text-[#2d473b] mb-1 block">Contraseña</label>
+          <input id="signupPassword" type="password" placeholder="Mínimo 4 caracteres" required
+            class="w-full h-11 px-3.5 rounded-xl bg-[#e5f4eb] text-[#0d2a1f] text-sm border-0 focus:ring-2 focus:ring-[#06382b] focus:outline-none">
+        </div>
+        <div>
+          <label for="signupPantryName" class="text-xs font-semibold text-[#2d473b] mb-1 block">Nombre del Hogar / Despensa</label>
+          <input id="signupPantryName" type="text" placeholder="Mi Despensa" value="Mi Despensa"
+            class="w-full h-11 px-3.5 rounded-xl bg-[#e5f4eb] text-[#0d2a1f] text-sm border-0 focus:ring-2 focus:ring-[#06382b] focus:outline-none">
+        </div>
+        <p class="text-[11px] text-[#557364]">Se creará tu despensa local y recibirás un código de 6 dígitos para que tu pareja pueda unirse.</p>
+        <button type="submit" class="w-full h-11 mt-1 rounded-xl bg-[#06382b] text-white font-bold text-xs active:scale-95 transition-all">
+          Crear cuenta y comenzar
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: RECUPERAR CONTRASEÑA LOCAL         -->
+  <!-- ========================================== -->
+  <div id="forgotPasswordModal" class="hidden fixed inset-0 z-50 modal-overlay flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl flex flex-col gap-4 border border-[#e2efe7]">
+      <div class="flex items-center justify-between pb-2 border-b border-[#e2efe7]">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-[#06382b] text-xl">lock_reset</span>
+          <h2 class="font-bold text-[#06382b] text-base">Recuperar Contraseña</h2>
+        </div>
+        <button id="closeForgotModalBtn" type="button" class="w-8 h-8 rounded-full bg-[#e5f4eb] flex items-center justify-center text-[#2d473b] hover:text-[#06382b]">
+          <span class="material-symbols-outlined text-lg">close</span>
+        </button>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <p class="text-xs text-[#3d594b]">
+          Ingresa el correo registrado para ver o cambiar la contraseña guardada en este dispositivo:
+        </p>
+        <div>
+          <label for="forgotEmail" class="text-xs font-semibold text-[#2d473b] mb-1 block">Correo electrónico</label>
+          <input id="forgotEmail" type="email" placeholder="ejemplo@hogar.com" 
+            class="w-full h-11 px-3.5 rounded-xl bg-[#e5f4eb] text-[#0d2a1f] text-sm border-0 focus:ring-2 focus:ring-[#06382b] focus:outline-none">
+        </div>
+        <button id="lookupPasswordBtn" type="button" class="w-full h-11 rounded-xl bg-[#d7ede0] text-[#0b3a2d] font-bold text-xs hover:bg-[#cbe5d5] transition-all">
+          Buscar contraseña guardada
+        </button>
+        <div id="forgotResultBox" class="hidden p-3 rounded-xl bg-[#ddf0e4] border border-[#cbe4d4] flex flex-col gap-2">
+          <p id="forgotResultText" class="text-xs text-[#06382b] font-medium"></p>
+          <div class="flex gap-2">
+            <input id="newPasswordInput" type="text" placeholder="Nueva contraseña" class="flex-1 h-9 px-3 text-xs rounded-lg bg-white border border-[#cbe4d4] focus:outline-none">
+            <button id="updatePasswordBtn" type="button" class="px-3 h-9 bg-[#06382b] text-white text-xs font-bold rounded-lg">Guardar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: ACCESO CON GOOGLE                   -->
+  <!-- ========================================== -->
+  <div id="googleLoginModal" class="hidden fixed inset-0 z-50 modal-overlay flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl flex flex-col gap-4 border border-[#e2efe7]">
+      <div class="flex items-center justify-between pb-2 border-b border-[#e2efe7]">
+        <div class="flex items-center gap-2">
+          <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          <h2 class="font-bold text-[#06382b] text-base">Iniciar con Google</h2>
+        </div>
+        <button id="closeGoogleModalBtn" type="button" class="w-8 h-8 rounded-full bg-[#e5f4eb] flex items-center justify-center text-[#2d473b] hover:text-[#06382b]">
+          <span class="material-symbols-outlined text-lg">close</span>
+        </button>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <p class="text-xs text-[#3d594b]">Selecciona una cuenta de Google guardada o ingresa tu correo para entrar directamente:</p>
+        
+        <!-- Cuenta sugerida -->
+        <button id="googleSuggestedAccountBtn" type="button" class="flex items-center gap-3 p-3 rounded-2xl bg-[#ddf0e4] hover:bg-[#d0ebd8] transition-all text-left border border-[#cbe4d4]">
+          <div class="w-10 h-10 rounded-full bg-[#06382b] text-white flex items-center justify-center font-bold text-sm">
+            C
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-xs font-bold text-[#06382b]">Cristian</p>
+            <p class="text-[11px] text-[#3d594b] truncate" id="googleSuggestedEmail">cristian@gmail.com</p>
+          </div>
+          <span class="material-symbols-outlined text-[#06382b] text-lg">login</span>
+        </button>
+
+        <div class="relative flex py-1 items-center justify-center">
+          <div class="w-full h-px bg-[#e4ede7]"></div>
+          <span class="absolute bg-white px-2.5 text-[11px] text-[#5a7769]">o usar otra cuenta</span>
+        </div>
+
+        <div>
+          <input id="customGoogleEmail" type="email" placeholder="tu.nombre@gmail.com" 
+            class="w-full h-11 px-3.5 rounded-xl bg-[#e5f4eb] text-[#0d2a1f] text-sm border-0 focus:ring-2 focus:ring-[#06382b] focus:outline-none">
+        </div>
+        <button id="googleCustomLoginBtn" type="button" class="w-full h-11 rounded-xl bg-[#06382b] text-white font-bold text-xs active:scale-95 transition-all">
+          Continuar con Google
+        </button>
+      </div>
+    </div>
+  <!-- ========================================== -->
+  <!-- MODAL: INGRESO RÁPIDO CON OPCIÓN DE LOTE   -->
+  <!-- ========================================== -->
+  <div id="quickIngressModal" class="hidden fixed inset-0 z-50 modal-overlay flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl flex flex-col gap-3.5 border border-[#e2efe7]">
+      <div class="flex items-center justify-between pb-1 border-b border-[#e2efe7]">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-[#06382b] text-xl">add_circle</span>
+          <h3 class="font-bold text-[#06382b] text-base" id="ingressProductTitle">Ingresar Stock</h3>
+        </div>
+        <button id="closeQuickIngressBtn" type="button" class="w-8 h-8 rounded-full bg-[#e5f4eb] flex items-center justify-center text-[#2d473b] hover:text-[#06382b]">
+          <span class="material-symbols-outlined text-lg">close</span>
+        </button>
+      </div>
+
+      <input type="hidden" id="ingressProductId">
+
+      <div class="flex flex-col gap-3">
+        <div>
+          <label class="text-xs font-semibold text-[#2d473b] block mb-1">Cantidad a ingresar</label>
+          <div class="flex items-center gap-2">
+            <button type="button" id="ingressDecBtn" class="w-10 h-10 rounded-xl bg-[#e5f4eb] text-[#06382b] font-extrabold text-lg select-none active:scale-95 transition-transform">−</button>
+            <input type="number" id="ingressQuantity" min="1" step="1" value="1" class="flex-1 h-10 text-center font-bold text-lg rounded-xl bg-[#e5f4eb] text-[#06382b] focus:outline-none">
+            <button type="button" id="ingressIncBtn" class="w-10 h-10 rounded-xl bg-[#e5f4eb] text-[#06382b] font-extrabold text-lg select-none active:scale-95 transition-transform">＋</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs font-semibold text-[#2d473b] block mb-1">Fecha de caducidad del nuevo ingreso</label>
+          <div class="flex flex-col gap-2">
+            <label class="flex items-center gap-2.5 p-2.5 rounded-xl bg-[#e5f4eb] text-xs font-medium cursor-pointer">
+              <input type="radio" name="ingressExpiryOption" value="same" checked class="text-[#06382b] focus:ring-0">
+              <span id="ingressSameLabel">Misma fecha del lote actual</span>
+            </label>
+            <label class="flex flex-col gap-1.5 p-2.5 rounded-xl bg-[#e5f4eb] text-xs font-medium cursor-pointer">
+              <div class="flex items-center gap-2.5">
+                <input type="radio" name="ingressExpiryOption" value="new" class="text-[#06382b] focus:ring-0">
+                <span>Nueva fecha diferente (otro lote)</span>
+              </div>
+              <input type="date" id="ingressNewDate" class="w-full h-9 px-3 rounded-lg bg-white border border-[#cbe4d4] text-xs mt-1 text-[#0d2a1f] focus:outline-none">
+            </label>
+          </div>
+        </div>
+
+        <button type="button" id="confirmIngressBtn" class="w-full h-11 mt-1 rounded-xl bg-[#06382b] text-white font-bold text-xs active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-sm">
+          <span class="material-symbols-outlined text-base">check</span>
+          <span>Confirmar Ingreso (+)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Flotante -->
+  <div id="toastNotification" class="hidden fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-primary text-on-primary px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 text-xs font-bold border border-primary-fixed/40 toast-enter">
+    <span class="material-symbols-outlined text-primary-fixed text-base" id="toastIcon">check_circle</span>
+    <span id="toastText">Acción completada con éxito</span>
+  </div>
+
+  <!-- Scripts -->
+  <script src="./config.js"></script>
+  <script type="module" src="./app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+    }
+  </script>
+</body>
+</html>
