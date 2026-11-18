@@ -80,9 +80,9 @@ function bindEvents() {
   $("resetDemoBtn")?.addEventListener("click", resetDemoPrompt);
   $("togglePasswordBtn")?.addEventListener("click", togglePasswordVisibility);
 
-  // Registro Local Modal
-  $("openSignupBtn")?.addEventListener("click", () => show("signupModal", true));
-  $("signupBtn")?.addEventListener("click", () => show("signupModal", true));
+  // Registro Modal
+  $("openSignupBtn")?.addEventListener("click", () => { msg("signupMessage", ""); show("signupModal", true); });
+  $("signupBtn")?.addEventListener("click", () => { msg("signupMessage", ""); show("signupModal", true); });
   $("closeSignupModalBtn")?.addEventListener("click", () => show("signupModal", false));
   $("signupForm")?.addEventListener("submit", handleCustomSignup);
 
@@ -271,25 +271,49 @@ async function handleCustomSignup(e) {
   const email = $("signupEmail")?.value.trim();
   const password = $("signupPassword")?.value.trim();
   const pantryName = $("signupPantryName")?.value.trim() || "Mi Despensa";
+  const submitBtn = $("signupSubmitBtn");
 
-  if (!email || !password) return alert("Por favor ingresa correo y contraseña.");
-  
-  show("signupModal", false);
-  msg("authMessage", "Creando cuenta y despensa local…");
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: { data: { name: name || email.split("@")[0], pantry_name: pantryName } }
-  });
-  if (error) {
-    msg("authMessage", error.message, true);
-  } else if (!data?.session && !data?.user?.email_confirmed_at) {
-    // Supabase exige confirmar el correo antes del primer inicio de sesión
-    if ($("email")) $("email").value = email;
-    msg("authMessage", `Te enviamos un correo a ${email}. Ábrelo y confirma tu cuenta para poder entrar.`);
-    showToast("Confirma tu correo para entrar", "mark_email_unread");
-  } else {
-    showToast(`¡Cuenta creada! Código familiar: ${data?.user?.user_metadata?.invite_code || 'CASA88'}`, "celebration");
+  if (!email || !password) {
+    msg("signupMessage", "Por favor ingresa correo y contraseña.", true);
+    return;
+  }
+  if (password.length < 6) {
+    msg("signupMessage", "La contraseña debe tener al menos 6 caracteres.", true);
+    return;
+  }
+
+  if (submitBtn) submitBtn.disabled = true;
+  msg("signupMessage", "Creando cuenta…");
+
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name: name || email.split("@")[0], pantry_name: pantryName } }
+    });
+    if (error) {
+      let friendly = error.message;
+      if (/at least 6 characters/i.test(friendly)) friendly = "La contraseña debe tener al menos 6 caracteres.";
+      else if (/already registered/i.test(friendly)) friendly = "Ese correo ya está registrado. Intenta iniciar sesión.";
+      else if (/rate limit/i.test(friendly)) friendly = "Límite de envíos alcanzado. Espera unos minutos antes de reintentar.";
+      msg("signupMessage", friendly, true);
+      return;
+    }
+
+    show("signupModal", false);
+    msg("signupMessage", "");
+    if (!data?.session && !data?.user?.email_confirmed_at) {
+      // Supabase exige confirmar el correo antes del primer inicio de sesión
+      if ($("email")) $("email").value = email;
+      msg("authMessage", `Te enviamos un correo a ${email}. Ábrelo y confirma tu cuenta para poder entrar.`);
+      showToast("Confirma tu correo para entrar", "mark_email_unread");
+    } else {
+      showToast(`¡Cuenta creada! Código familiar: ${data?.user?.user_metadata?.invite_code || 'CASA88'}`, "celebration");
+    }
+  } catch (err) {
+    msg("signupMessage", err?.message || "No se pudo crear la cuenta.", true);
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
   }
 }
 

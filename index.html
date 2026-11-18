@@ -839,7 +839,7 @@
   </div>
 
   <!-- ========================================== -->
-  <!-- MODAL: CREAR NUEVA CUENTA (REGISTRO LOCAL) -->
+  <!-- MODAL: CREAR NUEVA CUENTA                  -->
   <!-- ========================================== -->
   <div id="signupModal" class="hidden fixed inset-0 z-50 modal-overlay flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl flex flex-col gap-4 border border-[#e2efe7]">
@@ -866,7 +866,7 @@
         </div>
         <div>
           <label for="signupPassword" class="text-xs font-semibold text-[#2d473b] mb-1 block">Contraseña</label>
-          <input id="signupPassword" type="password" placeholder="Mínimo 4 caracteres" required
+          <input id="signupPassword" type="password" placeholder="Mínimo 6 caracteres" minlength="6" required
             class="w-full h-11 px-3.5 rounded-xl bg-[#e5f4eb] text-[#0d2a1f] text-sm border-0 focus:ring-2 focus:ring-[#06382b] focus:outline-none">
         </div>
         <div>
@@ -874,8 +874,9 @@
           <input id="signupPantryName" type="text" placeholder="Mi Despensa" value="Mi Despensa"
             class="w-full h-11 px-3.5 rounded-xl bg-[#e5f4eb] text-[#0d2a1f] text-sm border-0 focus:ring-2 focus:ring-[#06382b] focus:outline-none">
         </div>
-        <p class="text-[11px] text-[#557364]">Se creará tu despensa local y recibirás un código de 6 dígitos para que tu pareja pueda unirse.</p>
-        <button type="submit" class="w-full h-11 mt-1 rounded-xl bg-[#06382b] text-white font-bold text-xs active:scale-95 transition-all">
+        <p class="text-[11px] text-[#557364]">Se creará tu despensa y recibirás un correo de confirmación para entrar.</p>
+        <p id="signupMessage" class="text-xs font-semibold min-h-[16px] text-center" aria-live="polite"></p>
+        <button id="signupSubmitBtn" type="submit" class="w-full h-11 mt-1 rounded-xl bg-[#06382b] text-white font-bold text-xs active:scale-95 transition-all disabled:opacity-60">
           Crear cuenta y comenzar
         </button>
       </form>
