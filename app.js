@@ -1486,7 +1486,11 @@ async function lookupBarcode() {
 // ==========================================
 async function createOrFetchInvite() {
   if (currentMemberRole !== "owner") return;
-  const { data } = await supabase.rpc("create_pantry_invite", { p_pantry_id: currentPantry.id });
+  const { data, error } = await supabase.rpc("create_pantry_invite", { p_pantry_id: currentPantry.id });
+  if (error) {
+    msg("inviteMessage", error.message, true);
+    return;
+  }
   if (data && $("inviteCode")) $("inviteCode").value = data;
 }
 

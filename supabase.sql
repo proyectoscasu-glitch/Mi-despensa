@@ -266,7 +266,7 @@ end;
 $$;
 
 create or replace function public.create_pantry_invite(p_pantry_id uuid)
-returns text language plpgsql security definer set search_path=public
+returns text language plpgsql security definer set search_path=public, extensions
 as $$
 declare
   v_code text;
@@ -285,7 +285,7 @@ begin
     for i in 1..8 loop
       v_code := v_code || substr(v_alphabet, 1 + floor(random()*length(v_alphabet))::int, 1);
     end loop;
-    v_hash := encode(digest(v_code,'sha256'),'hex');
+    v_hash := encode(extensions.digest(v_code,'sha256'),'hex');
     exit when not exists (select 1 from public.pantry_invites where code_hash = v_hash);
     if v_attempts > 20 then raise exception 'No se pudo generar el código, intenta de nuevo.'; end if;
   end loop;
@@ -296,13 +296,13 @@ end;
 $$;
 
 create or replace function public.accept_pantry_invite(p_code text)
-returns uuid language plpgsql security definer set search_path=public
+returns uuid language plpgsql security definer set search_path=public, extensions
 as $$
 declare v_invite public.pantry_invites%rowtype;
 begin
   if auth.uid() is null then raise exception 'Debes iniciar sesión.'; end if;
   select * into v_invite from public.pantry_invites
-  where code_hash=encode(digest(p_code,'sha256'),'hex')
+  where code_hash=encode(extensions.digest(p_code,'sha256'),'hex')
     and accepted_at is null and expires_at>now()
   for update;
   if not found then raise exception 'Invitación inválida, vencida o ya utilizada.'; end if;
