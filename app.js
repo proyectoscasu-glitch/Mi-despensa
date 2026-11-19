@@ -116,13 +116,12 @@ function bindEvents() {
   $("quickScanBtn")?.addEventListener("click", openScanner);
   $("inviteParejaBtn")?.addEventListener("click", () => switchMainTab("tabPartner"));
 
-  // Filtros de Inventario
+  // Filtros de Inventario (chips y tarjetas de métricas superiores)
   document.querySelectorAll(".filter-chip").forEach(chip => {
-    chip.addEventListener("click", () => {
-      currentFilter = chip.dataset.filter;
-      updateFilterChipStyles();
-      renderProducts();
-    });
+    chip.addEventListener("click", () => applyInventoryFilter(chip.dataset.filter));
+  });
+  document.querySelectorAll(".metric-filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => applyInventoryFilter(btn.dataset.filter, { scroll: true }));
   });
 
   // Filtros de Alertas
@@ -1694,6 +1693,16 @@ function switchMainTab(targetId) {
     btn.classList.toggle("font-bold", isActive);
     btn.classList.toggle("text-on-surface-variant", !isActive);
   });
+}
+
+function applyInventoryFilter(filter, { scroll = false } = {}) {
+  currentFilter = filter || "all";
+  updateFilterChipStyles();
+  renderProducts();
+  if (scroll) {
+    const targetChip = document.querySelector(`.filter-chip[data-filter="${currentFilter}"]`);
+    targetChip?.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+  }
 }
 
 function updateFilterChipStyles() {

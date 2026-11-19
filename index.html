@@ -248,8 +248,8 @@
         <!-- Bento Grid de Métricas Clave -->
         <section class="grid grid-cols-3 gap-2.5">
           <!-- Total -->
-          <div class="bg-surface-container-lowest p-3.5 rounded-2xl shadow-xs border border-surface-container-high flex flex-col justify-between">
-            <div class="flex items-center justify-between text-secondary">
+          <button type="button" data-filter="all" class="metric-filter-btn bg-surface-container-lowest p-3.5 rounded-2xl shadow-xs border border-surface-container-high flex flex-col justify-between text-left cursor-pointer active:scale-[0.98] transition-all hover:bg-surface-container-low">
+            <div class="flex items-center justify-between w-full text-secondary">
               <span class="text-[11px] font-bold uppercase tracking-wider">Total</span>
               <span class="material-symbols-outlined text-base">kitchen</span>
             </div>
@@ -257,10 +257,10 @@
               <span class="text-2xl font-extrabold text-primary block leading-none" id="metricTotal">0</span>
               <span class="text-xs text-on-surface-variant mt-1 block">Artículos</span>
             </div>
-          </div>
+          </button>
           <!-- Por Vencer -->
-          <div class="bg-surface-container-lowest p-3.5 rounded-2xl shadow-xs border border-surface-container-high flex flex-col justify-between">
-            <div class="flex items-center justify-between text-tertiary-container">
+          <button type="button" data-filter="expiring" class="metric-filter-btn bg-surface-container-lowest p-3.5 rounded-2xl shadow-xs border border-surface-container-high flex flex-col justify-between text-left cursor-pointer active:scale-[0.98] transition-all hover:bg-surface-container-low">
+            <div class="flex items-center justify-between w-full text-tertiary-container">
               <span class="text-[11px] font-bold uppercase tracking-wider">Por Vencer</span>
               <span class="material-symbols-outlined text-base" style="font-variation-settings: 'FILL' 1;">timer</span>
             </div>
@@ -268,10 +268,10 @@
               <span class="text-2xl font-extrabold text-tertiary-container block leading-none" id="metricExpiring">0</span>
               <span class="text-xs text-tertiary font-semibold mt-1 block">≤ 3 días</span>
             </div>
-          </div>
+          </button>
           <!-- Reponer -->
-          <div class="bg-surface-container-lowest p-3.5 rounded-2xl shadow-xs border border-surface-container-high flex flex-col justify-between">
-            <div class="flex items-center justify-between text-error">
+          <button type="button" data-filter="low-stock" class="metric-filter-btn bg-surface-container-lowest p-3.5 rounded-2xl shadow-xs border border-surface-container-high flex flex-col justify-between text-left cursor-pointer active:scale-[0.98] transition-all hover:bg-surface-container-low">
+            <div class="flex items-center justify-between w-full text-error">
               <span class="text-[11px] font-bold uppercase tracking-wider">Reponer</span>
               <span class="material-symbols-outlined text-base">shopping_basket</span>
             </div>
@@ -279,7 +279,7 @@
               <span class="text-2xl font-extrabold text-error block leading-none" id="metricLowStock">0</span>
               <span class="text-xs text-error font-semibold mt-1 block">Bajo stock</span>
             </div>
-          </div>
+          </button>
         </section>
 
         <!-- Banner Cero Desperdicio -->
