@@ -47,21 +47,27 @@ async function initApp() {
     $("localOnlyDivider")?.classList.add("hidden");
     $("quickLocalBtn")?.classList.add("hidden");
     $("localInviteBox")?.classList.add("hidden");
+    if ($("forgotIntroText")) $("forgotIntroText").textContent = "Ingresa tu correo electrónico para enviarte un enlace de recuperación:";
+    if ($("lookupPasswordBtn")) $("lookupPasswordBtn").textContent = "Enviar enlace de recuperación";
   }
 
   bindEvents();
 
   // Escuchar estado de sesión
   const { data: { session } } = await supabase.auth.getSession();
-  if (session?.user) {
+  if (session?.user && !window.location.hash.includes("type=recovery")) {
     currentUser = session.user;
     await enterPantry();
   } else {
     showAuthView();
   }
 
-  supabase.auth.onAuthStateChange(async (_event, session) => {
+  supabase.auth.onAuthStateChange(async (event, session) => {
     currentUser = session?.user || null;
+    if (event === "PASSWORD_RECOVERY") {
+      openPasswordRecoveryReset();
+      return;
+    }
     if (currentUser) {
       await enterPantry();
     } else {
@@ -91,6 +97,13 @@ function bindEvents() {
   $("closeForgotModalBtn")?.addEventListener("click", () => show("forgotPasswordModal", false));
   $("lookupPasswordBtn")?.addEventListener("click", handleLookupPassword);
   $("updatePasswordBtn")?.addEventListener("click", handleUpdatePassword);
+  $("goToSignupFromForgotBtn")?.addEventListener("click", () => {
+    const email = $("forgotEmail")?.value.trim();
+    show("forgotPasswordModal", false);
+    if (email && $("signupEmail")) $("signupEmail").value = email;
+    msg("signupMessage", "");
+    show("signupModal", true);
+  });
 
   // Navegación Bottom Bar
   document.querySelectorAll(".nav-tab-btn").forEach(btn => {
@@ -226,14 +239,39 @@ function openForgotPasswordModal() {
     const fEmail = $("forgotEmail");
     if (fEmail) fEmail.value = currentEmail;
   }
-  const resultBox = $("forgotResultBox");
-  if (resultBox) resultBox.classList.add("hidden");
+  show("forgotEmailGroup", true);
+  show("lookupPasswordBtn", true);
+  show("goToSignupFromForgotBtn", false);
+  show("forgotResultBox", false);
+  msg("forgotMessage", "");
+  if (isConfigured && $("forgotIntroText")) {
+    $("forgotIntroText").textContent = "Ingresa tu correo electrónico para enviarte un enlace de recuperación:";
+  }
   show("forgotPasswordModal", true);
 }
 
-function handleLookupPassword() {
+function openPasswordRecoveryReset() {
+  showAuthView();
+  show("forgotEmailGroup", false);
+  show("lookupPasswordBtn", false);
+  show("goToSignupFromForgotBtn", false);
+  msg("forgotMessage", "");
+  if ($("forgotIntroText")) $("forgotIntroText").textContent = "Escribe tu nueva contraseña para tu cuenta:";
+  if ($("forgotResultText")) $("forgotResultText").textContent = "Nueva contraseña (mínimo 6 caracteres):";
+  if ($("newPasswordInput")) $("newPasswordInput").value = "";
+  show("forgotResultBox", true);
+  show("forgotPasswordModal", true);
+}
+
+async function handleLookupPassword() {
   const email = $("forgotEmail")?.value.trim();
-  if (!email) return alert("Ingresa un correo para buscar.");
+  if (!email) {
+    msg("forgotMessage", "Ingresa un correo electrónico.", true);
+    return;
+  }
+  msg("forgotMessage", "");
+  show("goToSignupFromForgotBtn", false);
+
   if (supabase.isLocal && supabase.auth.getLocalUsers) {
     const users = supabase.auth.getLocalUsers();
     const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
@@ -247,22 +285,69 @@ function handleLookupPassword() {
     } else {
       if (text) text.textContent = `No se encontró una cuenta previa para ${email}. Escribe una contraseña abajo para asignársela:`;
     }
-  } else {
-    showToast("Revisa tu correo para recuperar contraseña.", "mail");
+    return;
+  }
+
+  const btn = $("lookupPasswordBtn");
+  if (btn) btn.disabled = true;
+  msg("forgotMessage", "Verificando correo…");
+
+  try {
+    // Si existe la función RPC check_email_exists en Supabase, verificamos primero si está registrado
+    const { data: exists, error: rpcError } = await supabase.rpc("check_email_exists", { p_email: email });
+    if (!rpcError && exists === false) {
+      msg("forgotMessage", "Usuario no registrado. Crea una cuenta nueva para empezar.", true);
+      show("goToSignupFromForgotBtn", true);
+      return;
+    }
+
+    const redirectTo = window.location.origin + window.location.pathname;
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+    if (error) {
+      let friendly = error.message;
+      if (/rate limit/i.test(friendly)) friendly = "Límite de envíos alcanzado. Espera unos minutos antes de reintentar.";
+      msg("forgotMessage", friendly, true);
+      return;
+    }
+
+    msg("forgotMessage", `Te enviamos un correo a ${email} para restablecer tu contraseña. Revisa también Spam.`);
+    showToast("Correo de recuperación enviado", "mail");
+  } catch (err) {
+    msg("forgotMessage", err?.message || "No se pudo enviar el correo de recuperación.", true);
+  } finally {
+    if (btn) btn.disabled = false;
   }
 }
 
-function handleUpdatePassword() {
-  const email = $("forgotEmail")?.value.trim();
+async function handleUpdatePassword() {
   const newPass = $("newPasswordInput")?.value.trim();
-  if (!email || !newPass) return alert("Ingresa correo y nueva contraseña.");
+  if (!newPass) {
+    msg("forgotMessage", "Ingresa la nueva contraseña.", true);
+    return;
+  }
   if (supabase.isLocal && supabase.auth.resetPassword) {
+    const email = $("forgotEmail")?.value.trim();
+    if (!email) return alert("Ingresa correo y nueva contraseña.");
     supabase.auth.resetPassword(email, newPass);
     showToast("Contraseña actualizada con éxito", "check_circle");
     if ($("password")) $("password").value = newPass;
     if ($("email")) $("email").value = email;
     show("forgotPasswordModal", false);
+    return;
   }
+
+  if (newPass.length < 6) {
+    msg("forgotMessage", "La contraseña debe tener al menos 6 caracteres.", true);
+    return;
+  }
+  const { error } = await supabase.auth.updateUser({ password: newPass });
+  if (error) {
+    msg("forgotMessage", error.message, true);
+    return;
+  }
+  show("forgotPasswordModal", false);
+  showToast("Contraseña actualizada con éxito", "check_circle");
+  await enterPantry();
 }
 
 async function handleCustomSignup(e) {

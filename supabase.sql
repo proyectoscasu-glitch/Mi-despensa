@@ -342,6 +342,18 @@ grant execute on function public.toggle_shopping_cart(uuid) to authenticated;
 grant execute on function public.create_pantry_invite(uuid) to authenticated;
 grant execute on function public.accept_pantry_invite(text) to authenticated;
 
+-- Verifica si un correo ya está registrado (para mostrar aviso en Recuperar Contraseña)
+create or replace function public.check_email_exists(p_email text)
+returns boolean language sql stable security definer set search_path=public, auth
+as $$
+  select exists(
+    select 1 from auth.users where lower(email) = lower(trim(p_email))
+  );
+$$;
+
+revoke all on function public.check_email_exists(text) from public;
+grant execute on function public.check_email_exists(text) to anon, authenticated;
+
 -- ==========================================
 -- REALTIME (para que los cambios se vean al instante en el otro teléfono)
 -- ==========================================
