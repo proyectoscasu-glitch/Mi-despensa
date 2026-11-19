@@ -161,6 +161,13 @@ function bindEvents() {
   $("productName")?.addEventListener("input", updateProductPreview);
   $("productUnit")?.addEventListener("change", updateProductPreview);
   $("productQuantity")?.addEventListener("input", updateProductPreview);
+  $("choosePhotoBtn")?.addEventListener("click", () => $("productPhotoInput")?.click());
+  $("productPhotoInput")?.addEventListener("change", handleProductPhotoSelected);
+  $("removePhotoBtn")?.addEventListener("click", () => {
+    if ($("productPhotoUrl")) $("productPhotoUrl").value = "";
+    if ($("productPhotoInput")) $("productPhotoInput").value = "";
+    updateProductPreview();
+  });
   $("incQtyBtn")?.addEventListener("click", () => adjustFormQuantity(1));
   $("decQtyBtn")?.addEventListener("click", () => adjustFormQuantity(-1));
   $("scanFromFormBtn")?.addEventListener("click", openScanner);
@@ -1056,6 +1063,8 @@ async function quickStockAdjust(p, delta) {
 function openProductModal(p = null) {
   $("productForm").reset();
   $("productId").value = p?.id || "";
+  if ($("productPhotoUrl")) $("productPhotoUrl").value = p?.photo_url || "";
+  if ($("productPhotoInput")) $("productPhotoInput").value = "";
   $("productName").value = p?.name || "";
   $("productBrand").value = p?.brand || "";
   $("productFormat").value = p?.format || "";
@@ -1218,14 +1227,49 @@ function adjustFormQuantity(delta) {
   updateProductPreview();
 }
 
+function handleProductPhotoSelected(e) {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const maxDim = 280;
+      const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+      const w = Math.max(1, Math.round(img.width * scale));
+      const h = Math.max(1, Math.round(img.height * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+      if ($("productPhotoUrl")) $("productPhotoUrl").value = canvas.toDataURL("image/jpeg", 0.78);
+      updateProductPreview();
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+
 function updateProductPreview() {
   const name = $("productName")?.value.trim() || "Nuevo Producto";
   const qty = $("productQuantity")?.value || 0;
   const unit = $("productUnit")?.value || "unidades";
   const loc = $("productLocation")?.value || "Despensa";
+  const photoUrl = $("productPhotoUrl")?.value.trim();
 
   $("previewTitle").textContent = name;
   $("previewSubtitle").textContent = `${qty} ${unit} • En ${loc}`;
+
+  const wrapper = $("previewImageWrapper");
+  if (wrapper) {
+    if (photoUrl) {
+      wrapper.innerHTML = `<img src="${photoUrl}" alt="${name}" class="w-full h-full object-cover">`;
+    } else {
+      const iconMap = { Despensa: "shelves", Nevera: "kitchen", Congelador: "ac_unit", Limpieza: "cleaning_services" };
+      wrapper.innerHTML = `<span class="material-symbols-outlined text-3xl" id="previewLocationIcon">${iconMap[loc] || "shelves"}</span>`;
+    }
+  }
+  show("removePhotoBtn", !!photoUrl);
 }
 
 async function saveProduct(e) {
@@ -1270,6 +1314,7 @@ async function saveProduct(e) {
     expiry_date: earliestDate,
     expiry_alert: !!earliestDate,
     expiry_days_before: Number($("productExpiryDays").value || 3),
+    photo_url: $("productPhotoUrl")?.value.trim() || null,
     batches: batches
   };
 

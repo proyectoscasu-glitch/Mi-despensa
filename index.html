@@ -575,6 +575,8 @@
       <div class="p-5 overflow-y-auto flex flex-col gap-4 no-scrollbar">
         <form id="productForm" class="flex flex-col gap-4">
           <input id="productId" type="hidden">
+          <input id="productPhotoUrl" type="hidden">
+          <input id="productPhotoInput" type="file" accept="image/*" class="hidden">
 
           <!-- Vista Previa en Vivo -->
           <div class="bg-surface-container-lowest rounded-2xl p-3.5 shadow-xs border border-surface-container-high flex items-center gap-3">
@@ -585,6 +587,16 @@
               <span class="text-[10px] font-bold text-secondary uppercase tracking-wider block">Vista Previa</span>
               <h3 class="font-bold text-primary text-sm truncate" id="previewTitle">Nombre del producto</h3>
               <p class="text-xs text-on-surface-variant mt-0.5" id="previewSubtitle">0 unidades • En Despensa</p>
+              <div class="flex items-center gap-2 mt-2">
+                <button id="choosePhotoBtn" type="button" class="px-2.5 py-1 rounded-lg bg-surface-container text-primary font-bold text-[11px] flex items-center gap-1 active:scale-95 transition-transform">
+                  <span class="material-symbols-outlined text-sm">photo_camera</span>
+                  <span>Foto</span>
+                </button>
+                <button id="removePhotoBtn" type="button" class="hidden px-2 py-1 rounded-lg bg-error-container/60 text-error font-bold text-[11px] flex items-center gap-1 active:scale-95 transition-transform">
+                  <span class="material-symbols-outlined text-sm">delete</span>
+                  <span>Quitar</span>
+                </button>
+              </div>
             </div>
           </div>
 
